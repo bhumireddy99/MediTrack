@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     Platform,
     Pressable,
@@ -10,7 +10,7 @@ import {
     View,
 } from 'react-native';
 
-const LoginScreen = () => {
+const LoginScreen = ({onLogin}) => {
     const [emailOrMobile, setEmailOrMobile] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
@@ -58,7 +58,7 @@ const LoginScreen = () => {
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={styles.signInButton}>
+                <TouchableOpacity onPress={onLogin} style={styles.signInButton}>
                     <Text style={styles.signInText}>Sign in</Text>
                 </TouchableOpacity>
 

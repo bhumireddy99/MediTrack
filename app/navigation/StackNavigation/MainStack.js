@@ -1,13 +1,35 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
-import HomeScreen from '../../screens/Home';
+import { Ionicons } from '@expo/vector-icons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-const Stack = createNativeStackNavigator();
+import HomeScreen from '../../screens/Home';
+import PrescriptionScreen from '../../screens/Prescription';
+import ReminderScreen from '../../screens/Reminders';
+
+const Tab = createBottomTabNavigator();
 
 export default function MainStack() {
     return (
-        <Stack.Navigator>
-            <Stack.Screen name="Home" component={HomeScreen} />
-        </Stack.Navigator>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ color, size }) => {
+            let iconName;
+            if (route.name === 'Home') {
+              iconName = 'home';
+            } else if (route.name === 'Settings') {
+              iconName = 'settings';
+            } else if (route.name === 'Profile') {
+              iconName = 'person';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: '#007AFF',
+          tabBarInactiveTintColor: 'gray',
+          headerShown: true,
+        })}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Prescription" component={PrescriptionScreen} />
+        <Tab.Screen name="Reminder" component={ReminderScreen} />
+      </Tab.Navigator>
     );
 }
