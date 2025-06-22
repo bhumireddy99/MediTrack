@@ -30,7 +30,7 @@ const HomeScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scroll}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
                 <Text style={styles.greeting}>Hello, Divya 👋</Text>
                 <Text style={styles.subGreeting}>Here’s your health overview today.</Text>
 
