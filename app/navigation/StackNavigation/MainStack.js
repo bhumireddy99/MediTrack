@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import HomeScreen from '../../screens/Home';
-import PrescriptionScreen from '../../screens/Prescription';
 import ReminderScreen from '../../screens/Reminders';
+import PrescriptionStack from './PrescriptionStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -28,8 +28,9 @@ export default function MainStack() {
             })}
         >
             <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Prescription" component={PrescriptionScreen} />
+            <Tab.Screen name="Prescription" component={PrescriptionStack} />
             <Tab.Screen name="Reminder" component={ReminderScreen} />
+
         </Tab.Navigator>
     );
 }
