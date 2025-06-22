@@ -9,27 +9,27 @@ const Tab = createBottomTabNavigator();
 
 export default function MainStack() {
     return (
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ color, size }) => {
-            let iconName;
-            if (route.name === 'Home') {
-              iconName = 'home';
-            } else if (route.name === 'Settings') {
-              iconName = 'settings';
-            } else if (route.name === 'Profile') {
-              iconName = 'person';
-            }
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
-          tabBarActiveTintColor: '#007AFF',
-          tabBarInactiveTintColor: 'gray',
-          headerShown: true,
-        })}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Prescription" component={PrescriptionScreen} />
-        <Tab.Screen name="Reminder" component={ReminderScreen} />
-      </Tab.Navigator>
+        <Tab.Navigator
+            screenOptions={({ route }) => ({
+                tabBarIcon: ({ color, size }) => {
+                    let iconName;
+                    if (route.name === 'Home') {
+                        iconName = 'home-outline';
+                    } else if (route.name === 'Prescription') {
+                        iconName = 'add-circle-outline';
+                    } else if (route.name === 'Reminder') {
+                        iconName = 'notifications-outline';
+                    }
+                    return <Ionicons name={iconName} size={size} color={color} />;
+                },
+                tabBarActiveTintColor: '#007AFF',
+                tabBarInactiveTintColor: 'gray',
+                headerShown: false,
+            })}
+        >
+            <Tab.Screen name="Home" component={HomeScreen} />
+            <Tab.Screen name="Prescription" component={PrescriptionScreen} />
+            <Tab.Screen name="Reminder" component={ReminderScreen} />
+        </Tab.Navigator>
     );
 }
