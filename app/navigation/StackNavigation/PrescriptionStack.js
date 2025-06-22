@@ -1,5 +1,4 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
 import PrescriptionScreen from '../../screens/Prescription';
 import PrescriptionDetails from '../../screens/PrescriptionDetails';
 
@@ -12,7 +11,7 @@ const PrescriptionStack = () => {
             <Stack.Screen
                 name="Prescription"
                 component={PrescriptionScreen}
-                options={{ title: 'Prescriptions' }}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="PrescriptionDetails"
