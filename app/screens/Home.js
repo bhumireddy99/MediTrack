@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -14,18 +15,25 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
+import { clearUserFromStorage } from "../authStore";
+import { logout } from "../redux/auth";
 
 const { width, height } = Dimensions.get("window");
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
 
   const [takenModal, setTakenModal] = useState(false);
   const [upcomingModal, setUpcomingModal] = useState(false);
   const [missedModal, setMissedModal] = useState(false);
-  const date = useRef(new Date());
-  const [showPicker, setShowPicker] = useState(false);
+  const [userModal, setUserModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+
+  const date = useRef(new Date());
 
   const [medicines, setMedicines] = useState([
     { id: 1, time: "8:00 AM", name: "Thyronorm", status: "Taken" },
@@ -44,9 +52,14 @@ const HomeScreen = () => {
     setMedicines(updated);
   };
 
+  const handleLogout = async () => {
+    await clearUserFromStorage();
+    dispatch(logout());
+  };
+
   const takenCount = medicines.filter((m) => m.status === "Taken").length;
   const upcomingCount = medicines.filter((m) => m.status === "Upcoming").length;
-  const missedCount = 1;
+  const missedCount = missedMedicines.length;
 
   const upcomingMeds = medicines.filter((med) => med.status === "Upcoming");
   const takenMeds = medicines.filter((med) => med.status === "Taken");
@@ -58,25 +71,24 @@ const HomeScreen = () => {
 
   const formatDateLabel = (date) => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // normalize time
+    today.setHours(0, 0, 0, 0);
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
     const target = new Date(date);
-    target.setHours(0, 0, 0, 0); // normalize time
+    target.setHours(0, 0, 0, 0);
 
     if (target.getTime() === today.getTime()) return "Today's Medicine";
     if (target.getTime() === yesterday.getTime()) return "Yesterday's Medicine";
     if (target.getTime() === tomorrow.getTime()) return "Tomorrow's Medicine";
 
-    // Otherwise return formatted as "DD MMM YYYY"
     return `Medicine's for ${target.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
-    })}`; // e.g. 22 Jun 2025
+    })}`;
   };
 
   return (
@@ -85,8 +97,18 @@ const HomeScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
       >
-        <Text style={styles.greeting}>Hello, Divya 👋</Text>
-        <Text style={styles.subGreeting}>Here’s your health overview.</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.greeting}>Hello, Bhumika 👋</Text>
+            <Text style={styles.subGreeting}>Here’s your health overview.</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.userIconContainer}
+            onPress={() => setUserModal(true)}
+          >
+            <Ionicons name="person-circle-outline" size={36} color="#734BD1" />
+          </TouchableOpacity>
+        </View>
 
         <Modal transparent visible={loading} animationType="fade">
           <View style={styles.modalOverlaySpinner}>
@@ -179,6 +201,37 @@ const HomeScreen = () => {
             </View>
           ))}
         </TouchableOpacity>
+
+        <Modal
+          transparent
+          visible={userModal}
+          animationType="slide"
+          onRequestClose={() => setUserModal(false)}
+        >
+          <View style={styles.modalOverlay2}>
+            <View style={[styles.card, { width: "80%" }]}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={styles.modalHeader}>👤 User Info</Text>
+                <Text
+                  onPress={() => setUserModal(false)}
+                  style={{ fontSize: 20, fontWeight: "600", color: "#734BD1" }}
+                >
+                  X
+                </Text>
+              </View>
+              <Text style={{ marginBottom: 20 }}>{user?.email}</Text>
+              <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+                <Text style={styles.logoutBtnText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         <Modal
           animationType="fade"
@@ -322,6 +375,14 @@ const styles = StyleSheet.create({
   scroll: {
     padding: 20,
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  userIconContainer: {
+    padding: 4,
+  },
   greeting: {
     fontSize: 26,
     fontWeight: "700",
@@ -448,9 +509,16 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.overlay,
+    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  modalOverlay2: {
+    flex: 1,
+    position: "absolute",
+    right: -45,
+    top: 80,
+    width: "80%",
   },
   modalCardWrapper: {
     width: width * 0.9,
@@ -458,17 +526,17 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   modalContent: {
-    backgroundColor: colors.card,
+    backgroundColor: "#FFFFFF",
     borderRadius: 22,
     padding: 20,
     maxHeight: height * 0.75,
   },
   modalHeader: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
-    color: colors.primary,
-    marginBottom: 14,
+    marginBottom: 12,
     textAlign: "center",
+    color: "#6C5CE7",
   },
   modalScroll: {
     marginBottom: 16,
@@ -479,14 +547,14 @@ const styles = StyleSheet.create({
   modalLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: colors.muted,
+    color: "#636e72",
   },
   modalValue: {
     fontSize: 15,
-    color: colors.text,
+    color: "#2D3436",
   },
   closeButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#6C5CE7",
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
@@ -495,6 +563,17 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
+  },
+  logoutBtn: {
+    backgroundColor: "#EA5455",
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  logoutBtnText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
   },
   modalOverlaySpinner: {
     flex: 1,
