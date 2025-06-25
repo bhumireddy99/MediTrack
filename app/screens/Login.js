@@ -2,9 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Image,
-  Modal,
   Platform,
   SafeAreaView,
   StyleSheet,
@@ -13,16 +11,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useDispatch } from "react-redux";
+import { saveUserToStorage } from "../authStore";
+import { login } from "../redux/auth";
 
 const LoginScreen = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const navigation = useNavigation();
+  const dispatch = useDispatch();
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
@@ -31,18 +32,15 @@ const LoginScreen = ({ onLogin }) => {
   const validateLogin = (email, password) => {
     const errors = {};
 
-    // Check email
     if (!email) {
       errors.email = "Email is required.";
     } else {
-      // Regex for simple email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         errors.email = "Please enter a valid email address.";
       }
     }
 
-    // Check password
     if (!password) {
       errors.password = "Password is required.";
     } else if (password.length < 6) {
@@ -52,26 +50,30 @@ const LoginScreen = ({ onLogin }) => {
     return errors;
   };
 
-  const loginButtonPressed = () => {
+  const loginButtonPressed = async () => {
     setLoading(true);
-    const errors = validateLogin(email, password);
-    if (Object.keys(errors).length > 0) {
-      // Show errors to the user, e.g. set state
-      setErrors(errors);
+    const validationErrors = validateLogin(email, password);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       setLoading(false);
       return;
     }
+    if (
+      email.toLowerCase() === "bhumikareddy@gmail.com" &&
+      password === "bhumika@1999"
+    ) {
+      const user = { email };
+      dispatch(login(user));
+      await saveUserToStorage(user);
+      onLogin();
+    } else {
+      setErrors({ email: "User not found or password incorrect" });
+    }
     setLoading(false);
-    onLogin();
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Modal transparent visible={loading} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <ActivityIndicator size="large" color="#734BD1" />
-        </View>
-      </Modal>
       <View style={styles.card}>
         <Image
           style={styles.tinyLogo}
@@ -115,13 +117,6 @@ const LoginScreen = ({ onLogin }) => {
           <Text style={{ color: "red" }}>{errors.password}</Text>
         )}
         <View style={styles.row}>
-          {/* <Pressable
-                        onPress={() => setRememberMe(!rememberMe)}
-                        style={styles.checkboxWrapper}
-                    >
-                        <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]} />
-                        <Text style={styles.checkboxLabel}>Remember me</Text>
-                    </Pressable> */}
           <TouchableOpacity
             onPress={() => navigation.navigate("ForgotPassword")}
           >
@@ -133,7 +128,9 @@ const LoginScreen = ({ onLogin }) => {
           onPress={() => loginButtonPressed()}
           style={styles.signInButton}
         >
-          <Text style={styles.signInText}>Sign in</Text>
+          <Text style={styles.signInText}>
+            {loading ? "Logging in..." : "Sign in"}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
