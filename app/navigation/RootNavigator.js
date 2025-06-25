@@ -1,14 +1,27 @@
-import React, { useState } from 'react';
-import LoginStack from './StackNavigation/LoginStack';
-import MainStack from './StackNavigation/MainStack';
-
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getUserFromStorage } from "../authStore";
+import { login } from "../redux/auth";
+import LoginStack from "./StackNavigation/LoginStack";
+import MainStack from "./StackNavigation/MainStack";
 
 export default function RootNavigator() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const user = useSelector((state) => state.auth.user);
+  const dispatch = useDispatch();
 
-    const handleLogin = () => {
-        setIsLoggedIn(true);
+  useEffect(() => {
+    const CheckUsr = async () => {
+      const storedUser = await getUserFromStorage();
+      if (storedUser) {
+        dispatch(login(storedUser));
+      }
+      setLoading(false);
     };
+    CheckUsr();
+  }, []);
 
-    return isLoggedIn ? <MainStack /> : <LoginStack onLogin={handleLogin} />;
+  if (loading) return null;
+
+  return user ? <MainStack /> : <LoginStack />;
 }
