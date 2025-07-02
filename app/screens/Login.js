@@ -59,8 +59,8 @@ const LoginScreen = ({ onLogin }) => {
       return;
     }
     if (
-      email.toLowerCase() === "bhumikareddy@gmail.com" &&
-      password === "bhumika@1999"
+      email.toLowerCase() === "bhumika@gmail.com" &&
+      password === "123456"
     ) {
       const user = { email };
       dispatch(login(user));

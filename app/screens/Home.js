@@ -104,7 +104,7 @@ const HomeScreen = () => {
           </View>
           <TouchableOpacity
             style={styles.userIconContainer}
-            onPress={() => setUserModal(true)}
+            onPress={() => setUserModal(!userModal)}
           >
             <Ionicons name="person-circle-outline" size={36} color="#734BD1" />
           </TouchableOpacity>
@@ -118,8 +118,8 @@ const HomeScreen = () => {
 
         <View style={styles.card}>
           <TouchableOpacity onPress={() => setShowPicker(true)}>
-            <Text style={styles.labelBold}>Date:</Text>
-            <Text style={styles.sub}>{date.current.toDateString()}</Text>
+            {/* <Text style={styles.labelBold}>Date:</Text> */}
+            <Text style={styles.labelBold}>{date.current.toDateString()}</Text>
           </TouchableOpacity>
         </View>
 
@@ -181,13 +181,19 @@ const HomeScreen = () => {
           ))}
         </View>
 
-        <TouchableOpacity
+        <View style={styles.card}>
+          <Text style={styles.iconRow}>
+            🩺 Your next follow up visit is on 28th June 2025 at CityCare Hospital
+          </Text>
+        </View>
+
+        {/* <TouchableOpacity
           onPress={() => navigation.navigate("Prescription")}
           style={styles.card}
         >
           <Text style={styles.iconRow}>🩺 You have 2 active prescriptions</Text>
           <Text style={styles.sub}>Tap to view in My Prescription</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity style={styles.alertCard}>
           <Text style={styles.iconRow}>❗ You have 1 missed dose</Text>
@@ -202,36 +208,13 @@ const HomeScreen = () => {
           ))}
         </TouchableOpacity>
 
-        <Modal
-          transparent
-          visible={userModal}
-          animationType="slide"
-          onRequestClose={() => setUserModal(false)}
-        >
-          <View style={styles.modalOverlay2}>
-            <View style={[styles.card, { width: "80%" }]}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text style={styles.modalHeader}>👤 User Info</Text>
-                <Text
-                  onPress={() => setUserModal(false)}
-                  style={{ fontSize: 20, fontWeight: "600", color: "#734BD1" }}
-                >
-                  X
-                </Text>
-              </View>
-              <Text style={{ marginBottom: 20 }}>{user?.email}</Text>
-              <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-                <Text style={styles.logoutBtnText}>Logout</Text>
-              </TouchableOpacity>
-            </View>
+        {userModal && (
+          <View style={styles.userDropdown}>
+            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+              <Text style={styles.logoutBtnText}>Logout</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
+        )}
 
         <Modal
           animationType="fade"
@@ -506,6 +489,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginBottom: 4,
     color: "#1E1E1E",
+    lineHeight: 20
   },
   modalOverlay: {
     flex: 1,
@@ -513,12 +497,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  modalOverlay2: {
-    flex: 1,
+  userDropdown: {
     position: "absolute",
-    right: -45,
-    top: 80,
-    width: "80%",
+    top: 100,
+    right: 20,
+    width: 180,
+    backgroundColor: "#FFF",
+    padding: 16,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 10,
   },
   modalCardWrapper: {
     width: width * 0.9,
@@ -540,18 +531,6 @@ const styles = StyleSheet.create({
   },
   modalScroll: {
     marginBottom: 16,
-  },
-  modalItemBox: {
-    marginBottom: 10,
-  },
-  modalLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#636e72",
-  },
-  modalValue: {
-    fontSize: 15,
-    color: "#2D3436",
   },
   closeButton: {
     backgroundColor: "#6C5CE7",
