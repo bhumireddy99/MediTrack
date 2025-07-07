@@ -2,16 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import RenderHTML from "react-native-render-html";
 
 const { width, height } = Dimensions.get("window");
 
@@ -19,6 +20,8 @@ export default function PrescriptionDetailScreen({ route }) {
   const { prescription } = route.params;
   const [selectedMedicine, setSelectedMedicine] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [prescriptionModalVisible, setPrescriptionModalVisible] =
+    useState(false);
   const [loading, setLoading] = useState(false);
 
   const openModal = (medicine) => {
@@ -31,6 +34,49 @@ export default function PrescriptionDetailScreen({ route }) {
     setModalVisible(false);
   };
 
+  const htmlContent = {
+    html: `
+    <h1 style="text-align: center;">Dr. A. Kumar, MBBS</h1>
+    <p style="text-align: center;">General Physician | Reg. No: 123456</p>
+    <p style="text-align: center;">HealthCare Clinic, Bengaluru</p>
+    <p style="text-align: center;">Phone: +91 98765 43210</p>
+    <hr />
+    <p><strong>Patient Name:</strong> John Doe</p>
+    <p><strong>Age/Gender:</strong> 35 / Male</p>
+    <p><strong>Date:</strong> 07 July 2025</p>
+
+    <table border="1" style="width:100%; border-collapse:collapse;">
+      <tr>
+        <th>#</th>
+        <th>Medicine</th>
+        <th>Dosage</th>
+        <th>Timing</th>
+        <th>Duration</th>
+      </tr>
+      <tr>
+        <td>1</td>
+        <td>Paracetamol 500mg</td>
+        <td>1 tablet</td>
+        <td>Morning, Night</td>
+        <td>5 Days</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Vitamin D3</td>
+        <td>1 tablet</td>
+        <td>After Lunch</td>
+        <td>15 Days</td>
+      </tr>
+    </table>
+
+    <p><strong>Advice:</strong> Drink plenty of fluids, take rest, and avoid cold food.</p>
+    <div style="text-align: right; margin-top: 80px;">
+      ___________________________<br />
+      Doctor's Signature
+    </div>
+  `,
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Prescription Overview</Text>
@@ -40,9 +86,33 @@ export default function PrescriptionDetailScreen({ route }) {
         </View>
       </Modal>
       <View style={styles.cardTop}>
-        <Text style={styles.diseaseText}>{prescription.disease}</Text>
-        <Text style={styles.metaText}>👨‍⚕️ {prescription.doctor}</Text>
-        <Text style={styles.metaText}>🏥 {prescription.hospital}</Text>
+        <View>
+          <Text style={styles.diseaseText}>{prescription.disease}</Text>
+          <Text style={styles.metaText}>👨‍⚕️ {prescription.doctor}</Text>
+          <Text style={styles.metaText}>🏥 {prescription.hospital}</Text>
+        </View>
+        <View
+          style={{
+            backgroundColor: colors.primary,
+            borderRadius: 10,
+            height: 40,
+          }}
+        >
+          <Text
+            style={{
+              height: "100%",
+              width: "100%",
+              color: "white",
+              fontWeight: "bold",
+              padding: 10,
+            }}
+            onPress={() => {
+              setPrescriptionModalVisible(!prescriptionModalVisible);
+            }}
+          >
+            View Prescription
+          </Text>
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>Medicines</Text>
@@ -140,6 +210,37 @@ export default function PrescriptionDetailScreen({ route }) {
           </LinearGradient>
         </View>
       </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={prescriptionModalVisible}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <LinearGradient
+            colors={[colors.overlay2, colors.overlay2]}
+            style={styles.modalCardWrapper}
+          >
+            <Text
+              style={{
+                fontSize: 20,
+                fontFamily: "bold",
+                textAlign: "right",
+                padding: 20,
+              }}
+              onPress={() => {
+                setPrescriptionModalVisible(false);
+              }}
+            >
+              X
+            </Text>
+            <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+              <RenderHTML contentWidth={width} source={htmlContent} />
+            </View>
+          </LinearGradient>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -152,6 +253,7 @@ const colors = {
   text: "#2D3436",
   muted: "#636e72",
   overlay: "rgba(0,0,0,0.4)",
+  overlay2: "white",
 };
 
 const styles = StyleSheet.create({
@@ -176,6 +278,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
+    justifyContent: "space-between",
+    flexDirection: "row",
   },
   diseaseText: {
     fontSize: 20,
@@ -224,11 +328,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  modalOverlay2: {
+    flex: 1,
+    backgroundColor: colors.overlay2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   modalCardWrapper: {
     width: width * 0.9,
     borderRadius: 24,
     padding: 2,
   },
+  modalCardWrapper2: { width: width * 0.9, borderRadius: 24, padding: 2 },
   modalContent: {
     backgroundColor: colors.card,
     borderRadius: 22,
