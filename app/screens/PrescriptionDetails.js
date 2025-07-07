@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Modal,
   Pressable,
@@ -10,8 +11,10 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
+import RNFetchBlob from "react-native-blob-util";
+import RNHTMLtoPDF from "react-native-html-to-pdf";
 import RenderHTML from "react-native-render-html";
 
 const { width, height } = Dimensions.get("window");
@@ -34,7 +37,7 @@ export default function PrescriptionDetailScreen({ route }) {
     setModalVisible(false);
   };
 
-  const htmlContent = {
+  const source = {
     html: `
     <h1 style="text-align: center;">Dr. A. Kumar, MBBS</h1>
     <p style="text-align: center;">General Physician | Reg. No: 123456</p>
@@ -75,6 +78,76 @@ export default function PrescriptionDetailScreen({ route }) {
       Doctor's Signature
     </div>
   `,
+  };
+
+  const prescriptionDowload = async () => {
+    const htmlContent = `
+    <h1 style="text-align: center;">Dr. A. Kumar, MBBS</h1>
+    <p style="text-align: center;">General Physician | Reg. No: 123456</p>
+    <p style="text-align: center;">HealthCare Clinic, Bengaluru</p>
+    <p style="text-align: center;">Phone: +91 98765 43210</p>
+    <hr />
+    <p><strong>Patient Name:</strong> John Doe</p>
+    <p><strong>Age/Gender:</strong> 35 / Male</p>
+    <p><strong>Date:</strong> 07 July 2025</p>
+
+    <table border="1" style="width:100%; border-collapse:collapse;">
+      <tr>
+        <th>#</th>
+        <th>Medicine</th>
+        <th>Dosage</th>
+        <th>Timing</th>
+        <th>Duration</th>
+      </tr>
+      <tr>
+        <td>1</td>
+        <td>Paracetamol 500mg</td>
+        <td>1 tablet</td>
+        <td>Morning, Night</td>
+        <td>5 Days</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Vitamin D3</td>
+        <td>1 tablet</td>
+        <td>After Lunch</td>
+        <td>15 Days</td>
+      </tr>
+    </table>
+
+    <p><strong>Advice:</strong> Drink plenty of fluids, take rest, and avoid cold food.</p>
+    <div style="text-align: right; margin-top: 80px;">
+      ___________________________<br />
+      Doctor's Signature
+    </div>
+  `;
+
+    try {
+      const pdf = await RNHTMLtoPDF.convert({
+        html: htmlContent,
+        fileName: "PrescriptionForm",
+        directory: "Documents",
+      });
+      // Define the destination path in the Downloads folder
+      const destPath = `${RNFetchBlob.fs.dirs.DownloadDir}/PrescriptionForm.pdf`;
+
+      // Move the generated PDF to the Downloads folder
+      await RNFetchBlob.fs.mv(pdf.filePath, destPath);
+
+      // Add the completed download with a notification
+      await RNFetchBlob.android.addCompleteDownload({
+        title: "Prescription Form",
+        description: "Prescription Form has been downloaded successfully.",
+        mime: "application/pdf",
+        path: destPath,
+        showNotification: true,
+        useDownloadManager: false,
+      });
+      Alert.alert("Download Successful")
+    } catch (error) {
+      // console.log(error);
+      Alert.alert("Error", "Failed to generate PDF");
+    }
   };
 
   return (
@@ -236,7 +309,33 @@ export default function PrescriptionDetailScreen({ route }) {
               X
             </Text>
             <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
-              <RenderHTML contentWidth={width} source={htmlContent} />
+              <RenderHTML contentWidth={width} source={source} />
+            </View>
+            <View
+              style={{
+                backgroundColor: colors.primary,
+                borderRadius: 10,
+                height: 40,
+                width: "70%",
+                marginLeft: "15%",
+                marginBottom: 20,
+              }}
+            >
+              <Text
+                style={{
+                  height: "100%",
+                  width: "100%",
+                  color: "white",
+                  fontWeight: "bold",
+                  paddingVertical: 10,
+                  paddingLeft: 85,
+                }}
+                onPress={() => {
+                  prescriptionDowload();
+                }}
+              >
+                Download PDF
+              </Text>
             </View>
           </LinearGradient>
         </View>
