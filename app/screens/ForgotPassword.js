@@ -63,7 +63,7 @@ const ForgotPasswordScreen = () => {
       <View style={styles.card}>
         <Image
           style={styles.tinyLogo}
-          source={require("../../assets/images/app.png")}
+          source={require("../../assets/images/appIcon.png")}
         />
         <Modal transparent visible={loading} animationType="fade">
           <View style={styles.modalOverlay}>

@@ -77,7 +77,7 @@ const LoginScreen = ({ onLogin }) => {
       <View style={styles.card}>
         <Image
           style={styles.tinyLogo}
-          source={require("../../assets/images/app.png")}
+          source={require("../../assets/images/appIcon.png")}
         />
         <Text style={styles.title}>Meditrack</Text>
         <Text style={styles.subtitle}>Patient Portal</Text>
