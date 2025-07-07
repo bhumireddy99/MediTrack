@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "835182543767",
+    "firebase_url": "https://meditrack-p360-default-rtdb.firebaseio.com",
+    "project_id": "meditrack-p360",
+    "storage_bucket": "meditrack-p360.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:835182543767:android:7c3e47d40e1cefb6fbfad2",
+        "android_client_info": {
+          "package_name": "com.p360.meditrack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3mV2PZPHgPmIKxulbc28NjT0CO0jNfE4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

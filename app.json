@@ -4,7 +4,7 @@
     "slug": "MediTrack",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/app.png",
     "scheme": "meditrack",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -12,11 +12,15 @@
       "supportsTablet": true
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/app.png",
+        "backgroundColor": "#ffffff",
+        "icon": "./assets/images/app.png"
       },
-      "edgeToEdgeEnabled": true
+
+      "edgeToEdgeEnabled": true,
+      "package": "com.p360.meditrack"
     },
     "web": {
       "bundler": "metro",
@@ -28,7 +32,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/app.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -37,6 +41,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "42fc6c5b-8dda-41b4-9c35-b334f20f47ab"
+      }
     }
   }
 }
