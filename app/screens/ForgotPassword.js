@@ -2,15 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
-  Image,
-  Modal,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Image,
+    Modal,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const ForgotPasswordScreen = () => {
@@ -70,10 +70,10 @@ const ForgotPasswordScreen = () => {
             <ActivityIndicator size="large" color="#734BD1" />
           </View>
         </Modal>
-        <Text style={styles.title}>Meditrack</Text>
-        <Text style={styles.subtitle}>Patient Portal</Text>
+        <Text allowFontScaling={false} style={styles.title}>Meditrack</Text>
+        <Text allowFontScaling={false} style={styles.subtitle}>Patient Portal</Text>
 
-        <Text style={styles.label}>Enter Password</Text>
+        <Text allowFontScaling={false} style={styles.label}>Enter Password</Text>
         <View style={styles.input}>
           <TextInput
             placeholder="*****"
@@ -94,9 +94,9 @@ const ForgotPasswordScreen = () => {
           </TouchableOpacity>
         </View>
         {errors.password && (
-          <Text style={{ color: "red" }}>{errors.password}</Text>
+          <Text allowFontScaling={false} style={{ color: "red" }}>{errors.password}</Text>
         )}
-        <Text style={styles.label}>Confirm Password</Text>
+        <Text allowFontScaling={false} style={styles.label}>Confirm Password</Text>
         <View style={styles.input}>
           <TextInput
             placeholder="*****"
@@ -117,13 +117,13 @@ const ForgotPasswordScreen = () => {
           </TouchableOpacity>
         </View>
         {errors.confirmPassword && (
-          <Text style={{ color: "red" }}>{errors.confirmPassword}</Text>
+          <Text allowFontScaling={false} style={{ color: "red" }}>{errors.confirmPassword}</Text>
         )}
         <TouchableOpacity
           onPress={() => onResetPassword()}
           style={styles.signInButton}
         >
-          <Text style={styles.signInText}>Update Password</Text>
+          <Text allowFontScaling={false} style={styles.signInText}>Update Password</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

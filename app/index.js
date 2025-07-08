@@ -5,16 +5,13 @@ import RootNavigator from "./navigation/RootNavigator";
 import { store } from "./redux/store";
 
 export default function Index() {
+
   useEffect(() => {
     requestUserPermission();
 
     const unsubscribeForeground = messaging().onMessage(
       async (remoteMessage) => {
         console.log("Foreground Notification:", remoteMessage);
-        // Alert.alert(
-        //   remoteMessage.notification?.title || "New Notification",
-        //   remoteMessage.notification?.body || ""
-        // );
       }
     );
 
@@ -22,31 +19,36 @@ export default function Index() {
       .getInitialNotification()
       .then((remoteMessage) => {
         if (remoteMessage) {
-          console.log(
-            "Notification caused app to open from quit state:",
-            remoteMessage
-          );
+          console.log("Notification caused app to open from quit state:", remoteMessage);
         }
       });
 
     const unsubscribeBackground = messaging().onNotificationOpenedApp(
       (remoteMessage) => {
-        console.log(
-          "Notification caused app to open from background:",
-          remoteMessage
-        );
+        console.log("Notification caused app to open from background:", remoteMessage);
       }
     );
 
     return () => {
       unsubscribeForeground();
       unsubscribeBackground();
+      // database().ref("/patientRecords").off("value", onValueChange);
     };
   }, []);
 
   return (
     <Provider store={store}>
       <RootNavigator />
+      {/* <View style={{ padding: 20 }}>
+        <Text allowFontScaling={false} style={{ fontSize: 20, fontWeight: "bold" }}>Items:</Text>
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <Text allowFontScaling={false} style={{ paddingVertical: 5 }}>{item.name}</Text>
+          )}
+        />
+      </View> */}
     </Provider>
   );
 }
