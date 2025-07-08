@@ -1,4 +1,5 @@
-import { useState } from "react";
+import database from "@react-native-firebase/database";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -12,19 +13,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const reminders = [
   {
     id: 1,
-    time: "8:00 AM",
     title: "Thyronorm",
     message: "Time to take your morning dose.",
   },
   {
     id: 2,
-    time: "4:00 PM",
     title: "Paracetamol",
     message: "Scheduled for the afternoon.",
   },
   {
     id: 3,
-    time: "10:00 PM",
     title: "Vitamin D",
     message: "Don’t forget your night supplement.",
   },
@@ -32,11 +30,58 @@ const reminders = [
 
 export default function ReminderScreen() {
   const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState({});
+
+  useEffect(() => {
+    const onValueChange = database()
+      .ref("/patientRecords/Susan")
+      .on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const parsed = Object.keys(data).map((key) => ({
+            id: key,
+            ...data[key],
+          }));
+          setItems(parsed);
+        } else {
+          setItems([]);
+        }
+      });
+
+    return () => {
+      database().ref("/patientRecords").off("value", onValueChange);
+    };
+  }, []);
+
+  let reminders = [];
+  let idCounter = 1;
+
+  Object.entries(items).forEach(([key, prescription]) => {
+    const doctor = prescription.doctor;
+    const hospital = prescription.hospital;
+
+    // Reminder: New prescription
+    reminders.push({
+      id: `reminder${idCounter++}`,
+      title: "💊 🆕 New prescription added",
+      message: `Prescription added by Dr. ${doctor} at ${hospital} on ${prescription.date}`,
+    });
+
+    // Reminder: Follow-up (if required)
+    const followUp = prescription.followUpDetails;
+    if (followUp?.followUpRequired === "Yes" && followUp.followUpDate) {
+      reminders.push({
+        id: `reminder${idCounter++}`,
+        title: "🔁 📅 Follow-up reminder",
+        message: `Follow-up scheduled by Dr. ${doctor} at ${hospital} on ${followUp.followUpDate}`,
+      });
+    }
+  });
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.header}>💡 Reminders</Text>
+        <Text allowFontScaling={false} style={styles.header}>💡 Reminders</Text>
         <Modal transparent visible={loading} animationType="fade">
           <View style={styles.modalOverlay}>
             <ActivityIndicator size="large" color="#734BD1" />
@@ -45,11 +90,8 @@ export default function ReminderScreen() {
         {reminders.map((item) => (
           <View key={item.id} style={styles.card}>
             <View style={styles.cardLeft}>
-              <Text style={styles.name}>💊 {item.title}</Text>
-              <Text style={styles.message}>{item.message}</Text>
-            </View>
-            <View style={styles.cardRight}>
-              <Text style={styles.time}>{item.time}</Text>
+              <Text allowFontScaling={false} style={styles.name}>{item.title}</Text>
+              <Text allowFontScaling={false} style={styles.message}>{item.message}</Text>
             </View>
           </View>
         ))}

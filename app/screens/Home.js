@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import database from "@react-native-firebase/database";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -32,37 +33,51 @@ const HomeScreen = () => {
   const [userModal, setUserModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [items, setItems] = useState({});
+  const [medicineList, setMedicineList] = useState([]);
+  const [followUpDetails, setFollowUpDetails] = useState([]);
+  const [missedMedicines, setMissedMedicines] = useState([]);
+
+  useEffect(() => {
+    const onValueChange = database()
+      .ref("/patientRecords/Susan")
+      .on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const parsed = Object.keys(data).map((key) => ({
+            id: key,
+            ...data[key],
+          }));
+          setItems(parsed);
+        } else {
+          setItems([]);
+        }
+      });
+
+    return () => {
+      database().ref("/patientRecords").off("value", onValueChange);
+    };
+  }, []);
 
   const date = useRef(new Date());
 
-  const [medicines, setMedicines] = useState([
-    { id: 1, time: "8:00 AM", name: "Thyronorm", status: "Taken" },
-    { id: 2, time: "4:00 PM", name: "Paracetamol", status: "Upcoming" },
-    { id: 3, time: "10:00 PM", name: "Vitamin D", status: "Upcoming" },
-  ]);
+  // const handleMarkAsTaken = (id) => {
+  //   const updated = medicines.map((med) =>
+  //     med.id === id ? { ...med, status: "Taken" } : med
+  //   );
+  //   setMedicines(updated);
+  // };
 
-  const [missedMedicines, setMissedMedicines] = useState([
-    { id: 1, time: "8:00 AM", name: "Dolo 650", status: "Missed" },
-  ]);
-
-  const handleMarkAsTaken = (id) => {
-    const updated = medicines.map((med) =>
-      med.id === id ? { ...med, status: "Taken" } : med
-    );
-    setMedicines(updated);
+  const markAsTaken = async (medKey, medIndex, dayIndex, timeIndex) => {
+    // const path = `/patientRecords/Susan/${medKey}/medicines/${medIndex}/taken/${dayIndex}/${timeIndex}`;
+    // await database().ref(path).set(1);
+    fetchData();
   };
 
   const handleLogout = async () => {
     await clearUserFromStorage();
     dispatch(logout());
   };
-
-  const takenCount = medicines.filter((m) => m.status === "Taken").length;
-  const upcomingCount = medicines.filter((m) => m.status === "Upcoming").length;
-  const missedCount = missedMedicines.length;
-
-  const upcomingMeds = medicines.filter((med) => med.status === "Upcoming");
-  const takenMeds = medicines.filter((med) => med.status === "Taken");
 
   const onChange = (event, selectedDate) => {
     setShowPicker(false);
@@ -91,6 +106,89 @@ const HomeScreen = () => {
     })}`;
   };
 
+  const timeLabels = ["Morning", "Afternoon", "Night"];
+  const timeHours = [9, 13, 21];
+
+  useEffect(() => {
+    if (!items) return;
+    const list = [];
+    const now = new Date();
+    let followUpsArray = [];
+    Object.keys(items).forEach((key) => {
+      const {
+        medicines = [],
+        patientInfo,
+        followUpDetails,
+        hospital,
+        doctor,
+      } = items[key];
+
+      const followUp = followUpDetails;
+      if (followUp?.followUpRequired === "Yes" && followUp.followUpDate) {
+        followUpsArray.push({
+          date: followUp.followUpDate,
+          doctor: doctor,
+          hospital: hospital,
+        });
+      }
+      setFollowUpDetails(followUpsArray);
+
+      medicines.forEach((med, medIndex) => {
+        const selectedDate = new Date(date.current); // Ensure it's a Date object
+        selectedDate.setHours(0, 0, 0, 0); // Reset time
+
+        const startDate = new Date(med.startDate); // Parse "7/9/2025" properly
+        
+        const [month, day, year] = med.startDate.split("/").map(Number);
+        const start = new Date(year, month - 1, day); // Explicit parsing
+        start.setHours(0, 0, 0, 0);
+
+        const dayIndex = Math.floor(
+          (selectedDate - start) / (1000 * 60 * 60 * 24)
+        );
+
+        if (dayIndex >= 0 && dayIndex < parseInt(med.duration)) {
+          med.timeOfConsumption.forEach((time, i) => {
+            const timeIdx = timeLabels.indexOf(time);
+            const medTime = new Date(selectedDate);
+            medTime.setHours(timeHours[timeIdx], 0, 0, 0);
+
+            const taken = med.taken?.[dayIndex]?.[i] || 0;
+            let status = "Upcoming";
+            if (taken === 1) status = "Taken";
+            else if (medTime < new Date()) status = "Missed";
+
+            list.push({
+              medIndex,
+              medKey: key,
+              dayIndex,
+              timeIndex: i,
+              time,
+              name: med.medicineName,
+              status,
+              consumption : med.consumption,
+              dosage: med.dosage,
+              instructions: med.instructions,
+            });
+          });
+        }
+      });
+    });
+
+    setMedicineList(list);
+    setMissedMedicines(list.filter((item) => item.status === "Missed"));
+  }, [date.current, items]);
+
+  const patientName = Object.values(items)?.[0]?.patientInfo?.name;
+
+  const grouped = {
+    Taken: [],
+    Missed: [],
+    Upcoming: [],
+  };
+
+  medicineList.forEach((m) => grouped[m.status].push(m));
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -99,8 +197,8 @@ const HomeScreen = () => {
       >
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.greeting}>Hello, Bhumika 👋</Text>
-            <Text style={styles.subGreeting}>Here’s your health overview.</Text>
+            <Text allowFontScaling={false} style={styles.greeting}>Hello, {patientName} 👋</Text>
+            <Text allowFontScaling={false} style={styles.subGreeting}>Here’s your health overview.</Text>
           </View>
           <TouchableOpacity
             style={styles.userIconContainer}
@@ -118,8 +216,8 @@ const HomeScreen = () => {
 
         <View style={styles.card}>
           <TouchableOpacity onPress={() => setShowPicker(true)}>
-            {/* <Text style={styles.labelBold}>Date:</Text> */}
-            <Text style={styles.labelBold}>{date.current.toDateString()}</Text>
+            {/* <Text allowFontScaling={false} style={styles.labelBold}>Date:</Text> */}
+            <Text allowFontScaling={false} style={styles.labelBold}>{date.current.toDateString()}</Text>
           </TouchableOpacity>
         </View>
 
@@ -133,77 +231,84 @@ const HomeScreen = () => {
         )}
 
         <View style={styles.highlightsRow}>
-          <TouchableOpacity
-            onPress={() => setTakenModal(true)}
-            style={styles.highlightCard}
-          >
-            <Text style={styles.highlightValue}>{takenCount}</Text>
-            <Text style={styles.highlightLabel}>Taken</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setUpcomingModal(true)}
-            style={styles.highlightCard}
-          >
-            <Text style={styles.highlightValue}>{upcomingCount}</Text>
-            <Text style={styles.highlightLabel}>Upcoming</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setMissedModal(true)}
-            style={styles.highlightCard}
-          >
-            <Text style={styles.highlightValue}>{missedCount}</Text>
-            <Text style={styles.highlightLabel}>Missed</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.sectionHeader}>
-          {formatDateLabel(date.current)}
-        </Text>
-        <View style={styles.card}>
-          {medicines.map((item) => (
-            <View key={item.id} style={styles.medRow}>
-              <View style={styles.timeBlock}>
-                <Text style={styles.time}>⏰ {item.time}</Text>
-                <Text style={styles.med}>💊 {item.name}</Text>
-              </View>
-
-              {item.status === "Taken" ? (
-                <Text style={styles.statusTaken}>✓ Taken</Text>
-              ) : (
-                <TouchableOpacity
-                  style={styles.takeBtn}
-                  onPress={() => handleMarkAsTaken(item.id)}
-                >
-                  <Text style={styles.takeBtnText}>Mark as Taken</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+          {["Taken", "Upcoming", "Missed"].map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={styles.highlightCard}
+              onPress={() => {
+                if (type === "Taken") setTakenModal(true);
+                if (type === "Missed") setMissedModal(true);
+                if (type === "Upcoming") setUpcomingModal(true);
+              }}
+            >
+              <Text allowFontScaling={false} style={styles.highlightValue}>{grouped[type].length}</Text>
+              <Text allowFontScaling={false} style={styles.highlightLabel}>{type}</Text>
+            </TouchableOpacity>
           ))}
         </View>
 
+        <Text allowFontScaling={false} style={styles.sectionHeader}>
+          {formatDateLabel(date.current)}
+        </Text>
         <View style={styles.card}>
-          <Text style={styles.iconRow}>
-            🩺 Your next follow up visit is on 28th June 2025 at CityCare Hospital
-          </Text>
+          {medicineList.length === 0 ? (
+            <View>
+              <Text> 💊 You have no medicins scheduled</Text>
+            </View>
+          ) : (
+            <View>
+              {medicineList.map((med, i) => (
+                <View key={i} style={styles.medRow}>
+                  {/* <Text>
+                    💊 {med.name} - {med.time} ({med.status})
+                  </Text> */}
+                  <View style={styles.timeBlock}>
+                    <Text allowFontScaling={false} style={styles.time}>⏰ {med.name}</Text>
+                    <Text allowFontScaling={false} style={styles.med}>
+                      💊 {med.time} - {med.consumption} ({med.status})
+                    </Text>
+                  </View>
+
+                  {med.status !== "Taken" && (
+                    <TouchableOpacity
+                      style={styles.takeBtn}
+                      onPress={() =>
+                        markAsTaken(
+                          med.medKey,
+                          med.medIndex,
+                          med.dayIndex,
+                          med.timeIndex
+                        )
+                      }
+                    >
+                      <Text allowFontScaling={false} style={styles.takeBtnText}>Mark as Taken</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
-        {/* <TouchableOpacity
-          onPress={() => navigation.navigate("Prescription")}
-          style={styles.card}
-        >
-          <Text style={styles.iconRow}>🩺 You have 2 active prescriptions</Text>
-          <Text style={styles.sub}>Tap to view in My Prescription</Text>
-        </TouchableOpacity> */}
+        {followUpDetails.length > 0 &&
+          followUpDetails.map((item, index) => (
+            <View key={index} style={styles.card}>
+              <Text allowFontScaling={false} style={styles.iconRow}>
+                🩺 Your next follow-up is on {item.date} at {item.hospital} with
+                Dr. {item.doctor}
+              </Text>
+            </View>
+          ))}
 
         <TouchableOpacity style={styles.alertCard}>
-          <Text style={styles.iconRow}>❗ You have 1 missed dose</Text>
+          <Text allowFontScaling={false} style={styles.iconRow}>❗ You have {missedMedicines.length} missed dose</Text>
           {missedMedicines.map((item) => (
             <View key={item.id} style={styles.medRow}>
               <View style={styles.timeBlock}>
-                <Text style={styles.time}>⏰ {item.time}</Text>
-                <Text style={styles.med}>💊 {item.name}</Text>
+                <Text allowFontScaling={false} style={styles.time}>⏰ {item.time} - {item.consumption}</Text>
+                <Text allowFontScaling={false} style={styles.med}>💊 {item.name}</Text>
               </View>
-              <Text style={styles.statusMissed}>x Missed</Text>
+              <Text allowFontScaling={false} style={styles.statusMissed}>x Missed</Text>
             </View>
           ))}
         </TouchableOpacity>
@@ -211,130 +316,73 @@ const HomeScreen = () => {
         {userModal && (
           <View style={styles.userDropdown}>
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-              <Text style={styles.logoutBtnText}>Logout</Text>
+              <Text allowFontScaling={false} style={styles.logoutBtnText}>Logout</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={takenModal}
-          onRequestClose={() => setTakenModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <LinearGradient
-              colors={[colors.primary, colors.accent]}
-              style={styles.modalCardWrapper}
-            >
-              <View style={styles.modalContent}>
-                <Text style={styles.modalHeader}>Medicines Taken</Text>
-
-                <ScrollView
-                  style={styles.modalScroll}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {takenMeds.map((item) => (
-                    <View key={item.id} style={styles.medRow}>
-                      <View style={styles.timeBlock}>
-                        <Text style={styles.time}>⏰ {item.time}</Text>
-                        <Text style={styles.med}>💊 {item.name}</Text>
-                      </View>
-                      <Text style={styles.statusTaken}>✓ Taken</Text>
+        {["Taken", "Upcoming", "Missed"].map((type) => (
+          <Modal
+            key={type}
+            transparent
+            visible={
+              (type === "Taken" && takenModal) ||
+              (type === "Missed" && missedModal) ||
+              (type === "Upcoming" && upcomingModal)
+            }
+            onRequestClose={() => {
+              if (type === "Taken") setTakenModal(false);
+              if (type === "Missed") setMissedModal(false);
+              if (type === "Upcoming") setUpcomingModal(false);
+            }}
+          >
+            <View style={styles.modalOverlay}>
+              <LinearGradient
+                colors={[colors.primary, colors.accent]}
+                style={styles.modalCardWrapper}
+              >
+                <View style={styles.modalContent}>
+                  <Text allowFontScaling={false} style={styles.modalHeader}>{type} Medicines</Text>
+                  <ScrollView
+                    style={styles.modalScroll}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <View>
+                      {grouped[type].length === 0 ? (
+                        <View>
+                          <Text>
+                            You have followed the prescription properly
+                          </Text>
+                        </View>
+                      ) : (
+                        <View>
+                          {grouped[type].map((m, i) => (
+                            <View key={m.id} style={styles.medRow}>
+                              <View style={styles.timeBlock}>
+                                <Text allowFontScaling={false} style={styles.time}>⏰ {m.time} - {m.consumption}</Text>
+                                <Text allowFontScaling={false} style={styles.med}>💊 {m.name}</Text>
+                              </View>
+                            </View>
+                          ))}
+                        </View>
+                      )}
                     </View>
-                  ))}
-                </ScrollView>
-
-                <Pressable
-                  style={styles.closeButton}
-                  onPress={() => setTakenModal(false)}
-                >
-                  <Text style={styles.closeButtonText}>Close</Text>
-                </Pressable>
-              </View>
-            </LinearGradient>
-          </View>
-        </Modal>
-
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={upcomingModal}
-          onRequestClose={() => setUpcomingModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <LinearGradient
-              colors={[colors.primary, colors.accent]}
-              style={styles.modalCardWrapper}
-            >
-              <View style={styles.modalContent}>
-                <Text style={styles.modalHeader}>Upcoming Medicines</Text>
-
-                <ScrollView
-                  style={styles.modalScroll}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {upcomingMeds.map((item) => (
-                    <View key={item.id} style={styles.medRow}>
-                      <View style={styles.timeBlock}>
-                        <Text style={styles.time}>⏰ {item.time}</Text>
-                        <Text style={styles.med}>💊 {item.name}</Text>
-                      </View>
-                      {/* <Text style={styles.statusTaken}>✓ Taken</Text> */}
-                    </View>
-                  ))}
-                </ScrollView>
-
-                <Pressable
-                  style={styles.closeButton}
-                  onPress={() => setUpcomingModal(false)}
-                >
-                  <Text style={styles.closeButtonText}>Close</Text>
-                </Pressable>
-              </View>
-            </LinearGradient>
-          </View>
-        </Modal>
-
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={missedModal}
-          onRequestClose={() => setMissedModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <LinearGradient
-              colors={[colors.primary, colors.accent]}
-              style={styles.modalCardWrapper}
-            >
-              <View style={styles.modalContent}>
-                <Text style={styles.modalHeader}>Medicines Taken</Text>
-
-                <ScrollView
-                  style={styles.modalScroll}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {missedMedicines.map((item) => (
-                    <View key={item.id} style={styles.medRow}>
-                      <View style={styles.timeBlock}>
-                        <Text style={styles.time}>⏰ {item.time}</Text>
-                        <Text style={styles.med}>💊 {item.name}</Text>
-                      </View>
-                      <Text style={styles.statusMissed}>x Missed</Text>
-                    </View>
-                  ))}
-                </ScrollView>
-
-                <Pressable
-                  style={styles.closeButton}
-                  onPress={() => setMissedModal(false)}
-                >
-                  <Text style={styles.closeButtonText}>Close</Text>
-                </Pressable>
-              </View>
-            </LinearGradient>
-          </View>
-        </Modal>
+                  </ScrollView>
+                  <Pressable
+                    style={styles.closeButton}
+                    onPress={() => {
+                      if (type === "Taken") setTakenModal(false);
+                      if (type === "Missed") setMissedModal(false);
+                      if (type === "Upcoming") setUpcomingModal(false);
+                    }}
+                  >
+                    <Text allowFontScaling={false} style={styles.closeButtonText}>Close</Text>
+                  </Pressable>
+                </View>
+              </LinearGradient>
+            </View>
+          </Modal>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -489,7 +537,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginBottom: 4,
     color: "#1E1E1E",
-    lineHeight: 20
+    lineHeight: 20,
   },
   modalOverlay: {
     flex: 1,

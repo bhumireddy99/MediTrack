@@ -2,14 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import {
-  Image,
-  Platform,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Image,
+    Platform,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useDispatch } from "react-redux";
 import { saveUserToStorage } from "../authStore";
@@ -79,10 +79,10 @@ const LoginScreen = ({ onLogin }) => {
           style={styles.tinyLogo}
           source={require("../../assets/images/appIcon.png")}
         />
-        <Text style={styles.title}>Meditrack</Text>
-        <Text style={styles.subtitle}>Patient Portal</Text>
+        <Text allowFontScaling={false} style={styles.title}>Meditrack</Text>
+        <Text allowFontScaling={false} style={styles.subtitle}>Patient Portal</Text>
 
-        <Text style={styles.label}>Mobile Number / Email</Text>
+        <Text allowFontScaling={false} style={styles.label}>Mobile Number / Email</Text>
 
         <TextInput
           style={styles.input}
@@ -92,8 +92,8 @@ const LoginScreen = ({ onLogin }) => {
           keyboardType="email-address"
           placeholderTextColor="#aaa"
         />
-        {errors.email && <Text style={{ color: "red" }}>{errors.email}</Text>}
-        <Text style={styles.label}>Password</Text>
+        {errors.email && <Text allowFontScaling={false} style={{ color: "red" }}>{errors.email}</Text>}
+        <Text allowFontScaling={false} style={styles.label}>Password</Text>
         <View style={styles.textInput}>
           <TextInput
             placeholder="*****"
@@ -114,13 +114,13 @@ const LoginScreen = ({ onLogin }) => {
           </TouchableOpacity>
         </View>
         {errors.password && (
-          <Text style={{ color: "red" }}>{errors.password}</Text>
+          <Text allowFontScaling={false} style={{ color: "red" }}>{errors.password}</Text>
         )}
         <View style={styles.row}>
           <TouchableOpacity
             onPress={() => navigation.navigate("ForgotPassword")}
           >
-            <Text style={styles.link}>Forgot password?</Text>
+            <Text allowFontScaling={false} style={styles.link}>Forgot password?</Text>
           </TouchableOpacity>
         </View>
 
@@ -128,7 +128,7 @@ const LoginScreen = ({ onLogin }) => {
           onPress={() => loginButtonPressed()}
           style={styles.signInButton}
         >
-          <Text style={styles.signInText}>
+          <Text allowFontScaling={false} style={styles.signInText}>
             {loading ? "Logging in..." : "Sign in"}
           </Text>
         </TouchableOpacity>

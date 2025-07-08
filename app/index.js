@@ -39,16 +39,6 @@ export default function Index() {
   return (
     <Provider store={store}>
       <RootNavigator />
-      {/* <View style={{ padding: 20 }}>
-        <Text allowFontScaling={false} style={{ fontSize: 20, fontWeight: "bold" }}>Items:</Text>
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <Text allowFontScaling={false} style={{ paddingVertical: 5 }}>{item.name}</Text>
-          )}
-        />
-      </View> */}
     </Provider>
   );
 }
