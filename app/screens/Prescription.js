@@ -1,5 +1,6 @@
+import database from "@react-native-firebase/database";
 import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -10,76 +11,41 @@ import {
   View,
 } from "react-native";
 
-const prescriptions = [
-  {
-    id: "1",
-    hospital: "CityCare Hospital",
-    doctor: "Dr. Smith",
-    disease: "General Illness",
-    medicines: [
-      {
-        name: "Paracetamol",
-        mg: "500mg",
-        frequency: "3 times a day",
-        duration: "5 days",
-        schedule: "08:00 AM, 2:00 PM, 8:00 PM",
-        how: "After food with water",
-        usage: "Reduce fever and relieve mild pain",
-        sideEffects: "Nausea, rash, liver issues if overused",
-        precautions: "Avoid alcohol, follow dosage strictly",
-      },
-      {
-        name: "Amoxicillin",
-        mg: "500mg",
-        frequency: "3 times a day",
-        duration: "7 days",
-        schedule: "08:00 AM, 2:00 PM, 8:00 PM",
-        how: "After meals",
-        usage: "Treats bacterial infections",
-        sideEffects: "Nausea, diarrhea",
-        precautions: "Avoid alcohol, complete full course",
-      },
-      {
-        name: "Ibuprofen",
-        mg: "400mg",
-        frequency: "2 times a day",
-        duration: "5 days",
-        schedule: "10:00 AM, 8:00 PM",
-        how: "After food",
-        usage: "Pain relief and inflammation",
-        sideEffects: "Upset stomach, dizziness",
-        precautions: "Avoid on empty stomach",
-      },
-      {
-        name: "Cetrizine",
-        mg: "10mg",
-        frequency: "Once a day",
-        duration: "7 days",
-        schedule: "09:00 PM",
-        how: "With or without food",
-        usage: "Relieves allergy symptoms",
-        sideEffects: "Drowsiness",
-        precautions: "Avoid driving after taking",
-      },
-      {
-        name: "Omeprazole",
-        mg: "20mg",
-        frequency: "Once a day",
-        duration: "14 days",
-        schedule: "Before breakfast",
-        how: "Empty stomach",
-        usage: "Reduces stomach acid",
-        sideEffects: "Headache, nausea",
-        precautions: "Avoid alcohol",
-      },
-    ],
-  },
-  // ... Keep your other prescriptions as is
-];
-
 export default function PrescriptionScreen() {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState({});
+
+  useEffect(() => {
+    const onValueChange = database()
+      .ref("/patientRecords/Susan")
+      .on("value", (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const parsed = Object.keys(data).map((key) => ({
+            id: key,
+            ...data[key],
+          }));
+          setItems(parsed);
+        } else {
+          setItems([]);
+        }
+      });
+
+    return () => {
+      database().ref("/patientRecords").off("value", onValueChange);
+    };
+  }, []);
+
+const prescriptions = Object.entries(items).map(
+  ([id, prescription]) => ({
+    id,
+    ...prescription,
+    hospital: prescription.hospital,
+    doctor: prescription.doctor,
+    disease: prescription.patientInfo.diagnosis
+  })
+);
 
   const renderPrescription = ({ item }) => (
     <TouchableOpacity
@@ -88,18 +54,18 @@ export default function PrescriptionScreen() {
         navigation.navigate("PrescriptionDetails", { prescription: item })
       }
     >
-      <Text style={styles.cardTitle}>{item.disease}</Text>
+      <Text allowFontScaling={false} style={styles.cardTitle}>{item.disease}</Text>
       <View style={styles.cardInfoRow}>
-        <Text style={styles.cardLabel}>🏥 {item.hospital}</Text>
-        <Text style={styles.cardLabel}>👨‍⚕️ {item.doctor}</Text>
+        <Text allowFontScaling={false} style={styles.cardLabel}>🏥 {item.hospital}</Text>
+        <Text allowFontScaling={false} style={styles.cardLabel}>👨‍⚕️ Dr. {item.doctor}</Text>
       </View>
-      <Text style={styles.cardFooterText}>Tap to view details ⬇️</Text>
+      <Text allowFontScaling={false} style={styles.cardFooterText}>Tap to view details ⬇️</Text>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Your Prescriptions</Text>
+      <Text allowFontScaling={false} style={styles.title}>Your Prescriptions</Text>
       <Modal transparent visible={loading} animationType="fade">
         <View style={styles.modalOverlay}>
           <ActivityIndicator size="large" color="#734BD1" />

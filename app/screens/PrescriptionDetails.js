@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Modal,
   Pressable,
@@ -13,8 +13,6 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import RNFetchBlob from "react-native-blob-util";
-import RNHTMLtoPDF from "react-native-html-to-pdf";
 import RenderHTML from "react-native-render-html";
 
 const { width, height } = Dimensions.get("window");
@@ -26,6 +24,7 @@ export default function PrescriptionDetailScreen({ route }) {
   const [prescriptionModalVisible, setPrescriptionModalVisible] =
     useState(false);
   const [loading, setLoading] = useState(false);
+  const navigation = useNavigation();
 
   const openModal = (medicine) => {
     setSelectedMedicine(medicine);
@@ -37,122 +36,40 @@ export default function PrescriptionDetailScreen({ route }) {
     setModalVisible(false);
   };
 
-  const source = {
-    html: `
-    <h1 style="text-align: center;">Dr. A. Kumar, MBBS</h1>
-    <p style="text-align: center;">General Physician | Reg. No: 123456</p>
-    <p style="text-align: center;">HealthCare Clinic, Bengaluru</p>
-    <p style="text-align: center;">Phone: +91 98765 43210</p>
-    <hr />
-    <p><strong>Patient Name:</strong> John Doe</p>
-    <p><strong>Age/Gender:</strong> 35 / Male</p>
-    <p><strong>Date:</strong> 07 July 2025</p>
+  const renderMedicineInfo = (medicines) => {
+    return medicines.map((med, index) => {
+      // Determine frequency
+      let frequency = "";
+      const isArrayOfArrays = Array.isArray(med.taken[0]); // Check structure
 
-    <table border="1" style="width:100%; border-collapse:collapse;">
-      <tr>
-        <th>#</th>
-        <th>Medicine</th>
-        <th>Dosage</th>
-        <th>Timing</th>
-        <th>Duration</th>
-      </tr>
-      <tr>
-        <td>1</td>
-        <td>Paracetamol 500mg</td>
-        <td>1 tablet</td>
-        <td>Morning, Night</td>
-        <td>5 Days</td>
-      </tr>
-      <tr>
-        <td>2</td>
-        <td>Vitamin D3</td>
-        <td>1 tablet</td>
-        <td>After Lunch</td>
-        <td>15 Days</td>
-      </tr>
-    </table>
+      if (isArrayOfArrays) {
+        const timesPerDay = med.taken[0].length;
+        frequency = `${timesPerDay} time${timesPerDay > 1 ? "s" : ""} a day`;
+      } else {
+        frequency = `${med.timeOfConsumption.length} time${
+          med.timeOfConsumption.length > 1 ? "s" : ""
+        } a day`;
+      }
 
-    <p><strong>Advice:</strong> Drink plenty of fluids, take rest, and avoid cold food.</p>
-    <div style="text-align: right; margin-top: 80px;">
-      ___________________________<br />
-      Doctor's Signature
-    </div>
-  `,
-  };
+      // Combine timeOfConsumption + consumption
+      const whenToTake = med.timeOfConsumption
+        .map((time) => `${time} ${med.consumption}`)
+        .join(", ");
 
-  const prescriptionDowload = async () => {
-    const htmlContent = `
-    <h1 style="text-align: center;">Dr. A. Kumar, MBBS</h1>
-    <p style="text-align: center;">General Physician | Reg. No: 123456</p>
-    <p style="text-align: center;">HealthCare Clinic, Bengaluru</p>
-    <p style="text-align: center;">Phone: +91 98765 43210</p>
-    <hr />
-    <p><strong>Patient Name:</strong> John Doe</p>
-    <p><strong>Age/Gender:</strong> 35 / Male</p>
-    <p><strong>Date:</strong> 07 July 2025</p>
-
-    <table border="1" style="width:100%; border-collapse:collapse;">
-      <tr>
-        <th>#</th>
-        <th>Medicine</th>
-        <th>Dosage</th>
-        <th>Timing</th>
-        <th>Duration</th>
-      </tr>
-      <tr>
-        <td>1</td>
-        <td>Paracetamol 500mg</td>
-        <td>1 tablet</td>
-        <td>Morning, Night</td>
-        <td>5 Days</td>
-      </tr>
-      <tr>
-        <td>2</td>
-        <td>Vitamin D3</td>
-        <td>1 tablet</td>
-        <td>After Lunch</td>
-        <td>15 Days</td>
-      </tr>
-    </table>
-
-    <p><strong>Advice:</strong> Drink plenty of fluids, take rest, and avoid cold food.</p>
-    <div style="text-align: right; margin-top: 80px;">
-      ___________________________<br />
-      Doctor's Signature
-    </div>
-  `;
-
-    try {
-      const pdf = await RNHTMLtoPDF.convert({
-        html: htmlContent,
-        fileName: "PrescriptionForm",
-        directory: "Documents",
-      });
-      // Define the destination path in the Downloads folder
-      const destPath = `${RNFetchBlob.fs.dirs.DownloadDir}/PrescriptionForm.pdf`;
-
-      // Move the generated PDF to the Downloads folder
-      await RNFetchBlob.fs.mv(pdf.filePath, destPath);
-
-      // Add the completed download with a notification
-      await RNFetchBlob.android.addCompleteDownload({
-        title: "Prescription Form",
-        description: "Prescription Form has been downloaded successfully.",
-        mime: "application/pdf",
-        path: destPath,
-        showNotification: true,
-        useDownloadManager: false,
-      });
-      Alert.alert("Download Successful")
-    } catch (error) {
-      // console.log(error);
-      Alert.alert("Error", "Failed to generate PDF");
-    }
+      return {
+        medicineName: med.medicineName,
+        dosage: med.dosage,
+        frequency,
+        whenToTake,
+        duration: med.duration,
+        instructions: med.instructions,
+      };
+    });
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Prescription Overview</Text>
+      <Text allowFontScaling={false} style={styles.header}>Prescription Overview</Text>
       <Modal transparent visible={loading} animationType="fade">
         <View style={styles.modalOverlaySpinner}>
           <ActivityIndicator size="large" color="#734BD1" />
@@ -160,9 +77,9 @@ export default function PrescriptionDetailScreen({ route }) {
       </Modal>
       <View style={styles.cardTop}>
         <View>
-          <Text style={styles.diseaseText}>{prescription.disease}</Text>
-          <Text style={styles.metaText}>👨‍⚕️ {prescription.doctor}</Text>
-          <Text style={styles.metaText}>🏥 {prescription.hospital}</Text>
+          <Text allowFontScaling={false} style={styles.diseaseText}>{prescription.disease}</Text>
+          <Text allowFontScaling={false} style={styles.metaText}>👨‍⚕️ Dr. {prescription.doctor}</Text>
+          <Text allowFontScaling={false} style={styles.metaText}>🏥 {prescription.hospital}</Text>
         </View>
         <View
           style={{
@@ -180,7 +97,7 @@ export default function PrescriptionDetailScreen({ route }) {
               padding: 10,
             }}
             onPress={() => {
-              setPrescriptionModalVisible(!prescriptionModalVisible);
+              navigation.navigate("PrescriptionView", { prescription: prescription })
             }}
           >
             View Prescription
@@ -188,16 +105,16 @@ export default function PrescriptionDetailScreen({ route }) {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Medicines</Text>
+      <Text allowFontScaling={false} style={styles.sectionTitle}>Medicines</Text>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollView}
       >
-        {prescription.medicines.map((medicine, index) => (
+        {renderMedicineInfo(prescription.medicines).map((med, idx) => (
           <TouchableOpacity
-            key={index}
+            key={idx}
             style={styles.medicineCard}
-            onPress={() => openModal(medicine)}
+            onPress={() => openModal(med)}
           >
             <View style={styles.medicineInfo}>
               <Ionicons
@@ -205,7 +122,7 @@ export default function PrescriptionDetailScreen({ route }) {
                 size={20}
                 color={colors.primary}
               />
-              <Text style={styles.medicineName}>{medicine.name}</Text>
+              <Text allowFontScaling={false} style={styles.medicineName}>{med.medicineName}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
           </TouchableOpacity>
@@ -224,60 +141,64 @@ export default function PrescriptionDetailScreen({ route }) {
             style={styles.modalCardWrapper}
           >
             <View style={styles.modalContent}>
-              <Text style={styles.modalHeader}>{selectedMedicine?.name}</Text>
+              <Text allowFontScaling={false} style={styles.modalHeader}>
+                {selectedMedicine?.medicineName}
+              </Text>
 
               <ScrollView
                 style={styles.modalScroll}
                 showsVerticalScrollIndicator={false}
               >
                 <View style={styles.modalItemBox}>
-                  <Text style={styles.modalLabel}>💊 Dosage:</Text>
-                  <Text style={styles.modalValue}>{selectedMedicine?.mg}</Text>
+                  <Text allowFontScaling={false} style={styles.modalLabel}>💊 Dosage:</Text>
+                  <Text allowFontScaling={false} style={styles.modalValue}>
+                    {selectedMedicine?.dosage}
+                  </Text>
                 </View>
                 <View style={styles.modalItemBox}>
-                  <Text style={styles.modalLabel}>📆 Frequency:</Text>
-                  <Text style={styles.modalValue}>
+                  <Text allowFontScaling={false} style={styles.modalLabel}>📆 Frequency:</Text>
+                  <Text allowFontScaling={false} style={styles.modalValue}>
                     {selectedMedicine?.frequency}
                   </Text>
                 </View>
                 <View style={styles.modalItemBox}>
-                  <Text style={styles.modalLabel}>⏳ Duration:</Text>
-                  <Text style={styles.modalValue}>
-                    {selectedMedicine?.duration}
+                  <Text allowFontScaling={false} style={styles.modalLabel}>⏳ Duration:</Text>
+                  <Text allowFontScaling={false} style={styles.modalValue}>
+                    {selectedMedicine?.duration} days
                   </Text>
                 </View>
                 <View style={styles.modalItemBox}>
-                  <Text style={styles.modalLabel}>🕒 Schedule:</Text>
-                  <Text style={styles.modalValue}>
-                    {selectedMedicine?.schedule}
+                  <Text allowFontScaling={false} style={styles.modalLabel}>🕒 Schedule:</Text>
+                  <Text allowFontScaling={false} style={styles.modalValue}>
+                    {selectedMedicine?.whenToTake}
                   </Text>
                 </View>
                 <View style={styles.modalItemBox}>
-                  <Text style={styles.modalLabel}>💡 How to Take:</Text>
-                  <Text style={styles.modalValue}>{selectedMedicine?.how}</Text>
+                  <Text allowFontScaling={false} style={styles.modalLabel}>💡 How to Take:</Text>
+                  <Text allowFontScaling={false} style={styles.modalValue}>
+                    {selectedMedicine?.instructions}
+                  </Text>
                 </View>
-                <View style={styles.modalItemBox}>
-                  <Text style={styles.modalLabel}>📋 Usage:</Text>
-                  <Text style={styles.modalValue}>
+                {/* <View style={styles.modalItemBox}>
+                  <Text allowFontScaling={false} style={styles.modalLabel}>📋 Usage:</Text>
+                  <Text allowFontScaling={false} style={styles.modalValue}>
                     {selectedMedicine?.usage}
                   </Text>
-                </View>
-                <View style={styles.modalItemBox}>
-                  <Text style={styles.modalLabel}>⚠️ Side Effects:</Text>
-                  <Text style={styles.modalValue}>
+                </View> */}
+                {/* <View style={styles.modalItemBox}>
+                  <Text allowFontScaling={false} style={styles.modalLabel}>⚠️ Side Effects:</Text>
+                  <Text allowFontScaling={false} style={styles.modalValue}>
                     {selectedMedicine?.sideEffects}
                   </Text>
-                </View>
+                </View> */}
                 <View style={styles.modalItemBox}>
-                  <Text style={styles.modalLabel}>🛑 Precautions:</Text>
-                  <Text style={styles.modalValue}>
-                    {selectedMedicine?.precautions}
-                  </Text>
+                  <Text allowFontScaling={false} style={styles.modalLabel}>🛑 Precautions:</Text>
+                  <Text allowFontScaling={false} style={styles.modalValue}>Avoid alcohol</Text>
                 </View>
               </ScrollView>
 
               <Pressable style={styles.closeButton} onPress={closeModal}>
-                <Text style={styles.closeButtonText}>Close</Text>
+                <Text allowFontScaling={false} style={styles.closeButtonText}>Close</Text>
               </Pressable>
             </View>
           </LinearGradient>
@@ -465,6 +386,7 @@ const styles = StyleSheet.create({
   },
   modalValue: {
     fontSize: 15,
+    marginLeft: 18,
     color: colors.text,
   },
   closeButton: {
