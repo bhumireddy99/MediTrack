@@ -9,16 +9,16 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.p360.meditrack"
     },
     "android": {
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/app.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff",
-        "icon": "./assets/images/app.png"
+        "icon": "./assets/images/icon.png"
       },
-
       "edgeToEdgeEnabled": true,
       "package": "com.p360.meditrack"
     },
@@ -32,7 +32,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/app.png",
+          "image": "./assets/images/appIcon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
