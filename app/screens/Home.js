@@ -50,10 +50,10 @@ const HomeScreen = () => {
             ...data[key],
           }));
           setItems(parsed);
-          setLoading(false)
+          setLoading(false);
         } else {
           setItems([]);
-           setLoading(false)
+          setLoading(false);
         }
       });
 
@@ -123,9 +123,9 @@ const HomeScreen = () => {
         followUpDetails,
         hospital,
         doctor,
-        id
+        id,
       } = items[key];
-      
+
       const followUp = followUpDetails;
       if (followUp?.followUpRequired === "Yes" && followUp.followUpDate) {
         followUpsArray.push({
@@ -141,7 +141,7 @@ const HomeScreen = () => {
         selectedDate.setHours(0, 0, 0, 0); // Reset time
 
         const startDate = new Date(med.startDate); // Parse "7/9/2025" properly
-        
+
         const [month, day, year] = med.startDate.split("/").map(Number);
         const start = new Date(year, month - 1, day); // Explicit parsing
         start.setHours(0, 0, 0, 0);
@@ -168,10 +168,10 @@ const HomeScreen = () => {
               time,
               name: med.medicineName,
               status,
-              consumption : med.consumption,
+              consumption: med.consumption,
               dosage: med.dosage,
               instructions: med.instructions,
-              id:id
+              id: id,
             });
           });
         }
@@ -192,6 +192,16 @@ const HomeScreen = () => {
 
   medicineList.forEach((m) => grouped[m.status].push(m));
 
+  const messageDisplay = (type) => {
+    if (type === "Taken") {
+      return " ⁠Umm... your meds are still waiting. Don’t keep them hanging!";
+    } else if (type === "Missed") {
+      return "⁠You nailed it — not a single pill missed! Your health is proud of you!";
+    } else if (type === "Upcoming") {
+      return "⁠You’re free… at least from pills! Enjoy the break!";
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -200,8 +210,12 @@ const HomeScreen = () => {
       >
         <View style={styles.headerRow}>
           <View>
-            <Text allowFontScaling={false} style={styles.greeting}>Hello, {patientName} 👋</Text>
-            <Text allowFontScaling={false} style={styles.subGreeting}>Here’s your health overview.</Text>
+            <Text allowFontScaling={false} style={styles.greeting}>
+              Hello, {patientName} 👋
+            </Text>
+            <Text allowFontScaling={false} style={styles.subGreeting}>
+              Here’s your health overview.
+            </Text>
           </View>
           <TouchableOpacity
             style={styles.userIconContainer}
@@ -220,7 +234,9 @@ const HomeScreen = () => {
         <View style={styles.card}>
           <TouchableOpacity onPress={() => setShowPicker(true)}>
             {/* <Text allowFontScaling={false} style={styles.labelBold}>Date:</Text> */}
-            <Text allowFontScaling={false} style={styles.labelBold}>{date.current.toDateString()}</Text>
+            <Text allowFontScaling={false} style={styles.labelBold}>
+              {date.current.toDateString()}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -244,8 +260,12 @@ const HomeScreen = () => {
                 if (type === "Upcoming") setUpcomingModal(true);
               }}
             >
-              <Text allowFontScaling={false} style={styles.highlightValue}>{grouped[type].length}</Text>
-              <Text allowFontScaling={false} style={styles.highlightLabel}>{type}</Text>
+              <Text allowFontScaling={false} style={styles.highlightValue}>
+                {grouped[type].length}
+              </Text>
+              <Text allowFontScaling={false} style={styles.highlightLabel}>
+                {type}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -266,7 +286,9 @@ const HomeScreen = () => {
                     💊 {med.name} - {med.time} ({med.status})
                   </Text> */}
                   <View style={styles.timeBlock}>
-                    <Text allowFontScaling={false} style={styles.time}>⏰ {med.name}</Text>
+                    <Text allowFontScaling={false} style={styles.time}>
+                      ⏰ {med.name}
+                    </Text>
                     <Text allowFontScaling={false} style={styles.med}>
                       💊 {med.time} - {med.consumption} ({med.status})
                     </Text>
@@ -285,7 +307,9 @@ const HomeScreen = () => {
                         )
                       }
                     >
-                      <Text allowFontScaling={false} style={styles.takeBtnText}>Mark as Taken</Text>
+                      <Text allowFontScaling={false} style={styles.takeBtnText}>
+                        Mark as Taken
+                      </Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -305,14 +329,22 @@ const HomeScreen = () => {
           ))}
 
         <TouchableOpacity style={styles.alertCard}>
-          <Text allowFontScaling={false} style={styles.iconRow}>❗ You have {missedMedicines.length} missed dose</Text>
+          <Text allowFontScaling={false} style={styles.iconRow}>
+            ❗ You have {missedMedicines.length} missed dose
+          </Text>
           {missedMedicines.map((item) => (
             <View key={item.id} style={styles.medRow}>
               <View style={styles.timeBlock}>
-                <Text allowFontScaling={false} style={styles.time}>⏰ {item.time} - {item.consumption}</Text>
-                <Text allowFontScaling={false} style={styles.med}>💊 {item.name}</Text>
+                <Text allowFontScaling={false} style={styles.time}>
+                  ⏰ {item.time} - {item.consumption}
+                </Text>
+                <Text allowFontScaling={false} style={styles.med}>
+                  💊 {item.name}
+                </Text>
               </View>
-              <Text allowFontScaling={false} style={styles.statusMissed}>x Missed</Text>
+              <Text allowFontScaling={false} style={styles.statusMissed}>
+                x Missed
+              </Text>
             </View>
           ))}
         </TouchableOpacity>
@@ -320,7 +352,9 @@ const HomeScreen = () => {
         {userModal && (
           <View style={styles.userDropdown}>
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-              <Text allowFontScaling={false} style={styles.logoutBtnText}>Logout</Text>
+              <Text allowFontScaling={false} style={styles.logoutBtnText}>
+                Logout
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -346,7 +380,9 @@ const HomeScreen = () => {
                 style={styles.modalCardWrapper}
               >
                 <View style={styles.modalContent}>
-                  <Text allowFontScaling={false} style={styles.modalHeader}>{type} Medicines</Text>
+                  <Text allowFontScaling={false} style={styles.modalHeader}>
+                    {type} Medicines
+                  </Text>
                   <ScrollView
                     style={styles.modalScroll}
                     showsVerticalScrollIndicator={false}
@@ -354,8 +390,8 @@ const HomeScreen = () => {
                     <View>
                       {grouped[type].length === 0 ? (
                         <View>
-                          <Text style = {{fontSize: 15, fontWeight: 'bold'}}>
-                            All Doses Taken!
+                          <Text style={{ fontSize: 15, fontWeight: "bold" }}>
+                            {messageDisplay(type)}
                           </Text>
                         </View>
                       ) : (
@@ -363,8 +399,18 @@ const HomeScreen = () => {
                           {grouped[type].map((m, i) => (
                             <View key={m.id} style={styles.medRow}>
                               <View style={styles.timeBlock}>
-                                <Text allowFontScaling={false} style={styles.time}>⏰ {m.time} - {m.consumption}</Text>
-                                <Text allowFontScaling={false} style={styles.med}>💊 {m.name}</Text>
+                                <Text
+                                  allowFontScaling={false}
+                                  style={styles.time}
+                                >
+                                  ⏰ {m.time} - {m.consumption}
+                                </Text>
+                                <Text
+                                  allowFontScaling={false}
+                                  style={styles.med}
+                                >
+                                  💊 {m.name}
+                                </Text>
                               </View>
                             </View>
                           ))}
@@ -380,7 +426,12 @@ const HomeScreen = () => {
                       if (type === "Upcoming") setUpcomingModal(false);
                     }}
                   >
-                    <Text allowFontScaling={false} style={styles.closeButtonText}>Close</Text>
+                    <Text
+                      allowFontScaling={false}
+                      style={styles.closeButtonText}
+                    >
+                      Close
+                    </Text>
                   </Pressable>
                 </View>
               </LinearGradient>

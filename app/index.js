@@ -5,6 +5,12 @@ import { Provider } from "react-redux";
 import RootNavigator from "./navigation/RootNavigator";
 import { store } from "./redux/store";
 
+useEffect(() => {
+  Notifications.getExpoPushTokenAsync().then(token => {
+    console.log("Expo Push Token:", token.data);
+  });
+}, []);
+
 export default function Index() {
   useEffect(() => {
     const initializeFCM = async () => {
@@ -51,12 +57,6 @@ export default function Index() {
 
     initializeFCM();
   }, []);
-
-  useEffect(() => {
-  Notifications.getExpoPushTokenAsync().then(token => {
-    console.log("Expo Push Token:", token.data);
-  });
-}, []);
 
   return (
     <Provider store={store}>

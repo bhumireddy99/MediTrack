@@ -13,7 +13,6 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import RenderHTML from "react-native-render-html";
 
 const { width, height } = Dimensions.get("window");
 
@@ -200,63 +199,6 @@ export default function PrescriptionDetailScreen({ route }) {
               <Pressable style={styles.closeButton} onPress={closeModal}>
                 <Text allowFontScaling={false} style={styles.closeButtonText}>Close</Text>
               </Pressable>
-            </View>
-          </LinearGradient>
-        </View>
-      </Modal>
-
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={prescriptionModalVisible}
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <LinearGradient
-            colors={[colors.overlay2, colors.overlay2]}
-            style={styles.modalCardWrapper}
-          >
-            <Text
-              style={{
-                fontSize: 20,
-                fontFamily: "bold",
-                textAlign: "right",
-                padding: 20,
-              }}
-              onPress={() => {
-                setPrescriptionModalVisible(false);
-              }}
-            >
-              X
-            </Text>
-            <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
-              <RenderHTML contentWidth={width} source={source} />
-            </View>
-            <View
-              style={{
-                backgroundColor: colors.primary,
-                borderRadius: 10,
-                height: 40,
-                width: "70%",
-                marginLeft: "15%",
-                marginBottom: 20,
-              }}
-            >
-              <Text
-                style={{
-                  height: "100%",
-                  width: "100%",
-                  color: "white",
-                  fontWeight: "bold",
-                  paddingVertical: 10,
-                  paddingLeft: 85,
-                }}
-                onPress={() => {
-                  prescriptionDowload();
-                }}
-              >
-                Download PDF
-              </Text>
             </View>
           </LinearGradient>
         </View>
