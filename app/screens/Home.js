@@ -39,6 +39,7 @@ const HomeScreen = () => {
   const [missedMedicines, setMissedMedicines] = useState([]);
 
   useEffect(() => {
+    setLoading(true);
     const onValueChange = database()
       .ref("/patientRecords/Susan")
       .on("value", (snapshot) => {
@@ -49,8 +50,10 @@ const HomeScreen = () => {
             ...data[key],
           }));
           setItems(parsed);
+          setLoading(false)
         } else {
           setItems([]);
+           setLoading(false)
         }
       });
 
@@ -68,10 +71,9 @@ const HomeScreen = () => {
   //   setMedicines(updated);
   // };
 
-  const markAsTaken = async (medKey, medIndex, dayIndex, timeIndex) => {
-    // const path = `/patientRecords/Susan/${medKey}/medicines/${medIndex}/taken/${dayIndex}/${timeIndex}`;
-    // await database().ref(path).set(1);
-    fetchData();
+  const markAsTaken = async (medKey, medIndex, dayIndex, timeIndex, id) => {
+    const path = `/patientRecords/Susan/${id}/medicines/${medIndex}/taken/${dayIndex}/${timeIndex}`;
+    await database().ref(path).set(1);
   };
 
   const handleLogout = async () => {
@@ -121,8 +123,9 @@ const HomeScreen = () => {
         followUpDetails,
         hospital,
         doctor,
+        id
       } = items[key];
-
+      
       const followUp = followUpDetails;
       if (followUp?.followUpRequired === "Yes" && followUp.followUpDate) {
         followUpsArray.push({
@@ -157,7 +160,6 @@ const HomeScreen = () => {
             let status = "Upcoming";
             if (taken === 1) status = "Taken";
             else if (medTime < new Date()) status = "Missed";
-
             list.push({
               medIndex,
               medKey: key,
@@ -169,6 +171,7 @@ const HomeScreen = () => {
               consumption : med.consumption,
               dosage: med.dosage,
               instructions: med.instructions,
+              id:id
             });
           });
         }
@@ -277,7 +280,8 @@ const HomeScreen = () => {
                           med.medKey,
                           med.medIndex,
                           med.dayIndex,
-                          med.timeIndex
+                          med.timeIndex,
+                          med.id
                         )
                       }
                     >
@@ -350,8 +354,8 @@ const HomeScreen = () => {
                     <View>
                       {grouped[type].length === 0 ? (
                         <View>
-                          <Text>
-                            You have followed the prescription properly
+                          <Text style = {{fontSize: 15, fontWeight: 'bold'}}>
+                            All Doses Taken!
                           </Text>
                         </View>
                       ) : (

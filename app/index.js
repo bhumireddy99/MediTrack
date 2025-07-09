@@ -1,40 +1,62 @@
 import messaging from "@react-native-firebase/messaging";
+import * as Notifications from 'expo-notifications';
 import { useEffect } from "react";
 import { Provider } from "react-redux";
 import RootNavigator from "./navigation/RootNavigator";
 import { store } from "./redux/store";
 
 export default function Index() {
+  useEffect(() => {
+    const initializeFCM = async () => {
+      await requestUserPermission();
+
+      try {
+        await messaging().subscribeToTopic("allUsers");
+        console.log("Subscribed to topic: allUsers");
+      } catch (error) {
+        console.error("Failed to subscribe to topic:", error);
+      }
+
+      const unsubscribeForeground = messaging().onMessage(
+        async (remoteMessage) => {
+          console.log("Foreground Notification:", remoteMessage);
+        }
+      );
+
+      const unsubscribeBackground = messaging().onNotificationOpenedApp(
+        (remoteMessage) => {
+          console.log(
+            "Notification caused app to open from background:",
+            remoteMessage
+          );
+        }
+      );
+
+      messaging()
+        .getInitialNotification()
+        .then((remoteMessage) => {
+          if (remoteMessage) {
+            console.log(
+              "Notification caused app to open from quit state:",
+              remoteMessage
+            );
+          }
+        });
+
+      return () => {
+        unsubscribeForeground();
+        unsubscribeBackground();
+      };
+    };
+
+    initializeFCM();
+  }, []);
 
   useEffect(() => {
-    requestUserPermission();
-
-    const unsubscribeForeground = messaging().onMessage(
-      async (remoteMessage) => {
-        console.log("Foreground Notification:", remoteMessage);
-      }
-    );
-
-    messaging()
-      .getInitialNotification()
-      .then((remoteMessage) => {
-        if (remoteMessage) {
-          console.log("Notification caused app to open from quit state:", remoteMessage);
-        }
-      });
-
-    const unsubscribeBackground = messaging().onNotificationOpenedApp(
-      (remoteMessage) => {
-        console.log("Notification caused app to open from background:", remoteMessage);
-      }
-    );
-
-    return () => {
-      unsubscribeForeground();
-      unsubscribeBackground();
-      // database().ref("/patientRecords").off("value", onValueChange);
-    };
-  }, []);
+  Notifications.getExpoPushTokenAsync().then(token => {
+    console.log("Expo Push Token:", token.data);
+  });
+}, []);
 
   return (
     <Provider store={store}>
