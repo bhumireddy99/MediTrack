@@ -1,24 +1,50 @@
-import { useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   Modal,
+  ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import RNFetchBlob from "react-native-blob-util";
 import RNHTMLtoPDF from "react-native-html-to-pdf";
-import { WebView } from "react-native-webview";
+import { SafeAreaView } from "react-native-safe-area-context";
+import WebView from "react-native-webview";
 
 const { width, height } = Dimensions.get("window");
 
 export default function PrescriptionViewScreen({ route }) {
   const { prescription } = route.params;
   const [loading, setLoading] = useState(false);
+  const navigation = useNavigation();
 
-  console.log(prescription);
+  // Animation values for header
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -50,7 +76,7 @@ export default function PrescriptionViewScreen({ route }) {
     })
     .join("");
 
-const htmlContent = `
+  const htmlContent = `
   <!DOCTYPE html>
   <html>
     <head>
@@ -107,7 +133,6 @@ const htmlContent = `
   </html>
 `;
 
-
   const prescriptionDowload = async () => {
     const htmlContent = `
     <h1 style="text-align: center;">Dr. ${prescription.doctor}</h1>
@@ -154,7 +179,10 @@ const htmlContent = `
         showNotification: true,
         useDownloadManager: false,
       });
-      Alert.alert("Download Successful");
+      Alert.alert(
+        "Download Successful",
+        `Prescription has been saved to Downloads`
+      );
     } catch (error) {
       // console.log(error);
       Alert.alert("Error", "Failed to generate PDF");
@@ -162,38 +190,85 @@ const htmlContent = `
   };
 
   return (
-    <View style={styles.container}>
-      <Modal transparent visible={loading} animationType="fade">
-        <View style={styles.modalOverlaySpinner}>
-          <ActivityIndicator size="large" color="#734BD1" />
-        </View>
-      </Modal>
-
-      <View style={{ paddingBottom: 20, flex: 1 }}>
-        <WebView source={{ html: htmlContent }} sharedCookiesEnabled />
-      </View>
-      <View
-        style={{
-          backgroundColor: colors.primary,
-          borderRadius: 10,
-          paddingVertical: 5,
-        }}
+    <View style={{ flex: 1 }}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+      <LinearGradient
+        colors={["#667eea", "#764ba2"]}
+        style={styles.backgroundGradient}
       >
-        <Text
-          style={{
-            color: "white",
-            fontWeight: "bold",
-            padding: 10,
-            textAlign: "center",
-            fontSize: 16,
-          }}
-          onPress={() => {
-            prescriptionDowload();
-          }}
-        >
-          Download Prescription
-        </Text>
-      </View>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={{ flex: 1, flexDirection: "column" }}>
+            {/* Animated Header Section */}
+            <Animated.View
+              style={[
+                styles.headerSection,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.headerContent}>
+                <Text style={styles.headerTitle}>Prescription</Text>
+                <Text style={styles.headerSubtitle}>View & Download</Text>
+              </View>
+              <View style={styles.headerIcon}>
+                <Ionicons name="document-text" size={28} color="#fff" />
+              </View>
+            </Animated.View>
+            {/* Scrollable Content */}
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: "flex-start",
+              }}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.container}>
+                <Modal transparent visible={loading} animationType="fade">
+                  <View style={styles.modalOverlaySpinner}>
+                    <ActivityIndicator size="large" color="#734BD1" />
+                  </View>
+                </Modal>
+                <View style={styles.webviewCard}>
+                  <WebView
+                    source={{ html: htmlContent }}
+                    sharedCookiesEnabled
+                    style={{ flex: 1, borderRadius: 24 }}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={styles.downloadButton}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    setLoading(true);
+                    prescriptionDowload().finally(() => setLoading(false));
+                  }}
+                >
+                  <LinearGradient
+                    colors={["#667eea", "#764ba2"]}
+                    style={styles.buttonGradient}
+                  >
+                    <Ionicons name="download" size={22} color="#fff" />
+                    <Text style={styles.buttonText}>Download Prescription</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
     </View>
   );
 }
@@ -210,131 +285,97 @@ const colors = {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  backgroundGradient: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: 20,
   },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.primary,
-    marginBottom: 20,
-  },
-  cardTop: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-    justifyContent: "space-between",
+  headerSection: {
     flexDirection: "row",
-  },
-  diseaseText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 10,
-  },
-  metaText: {
-    fontSize: 14,
-    color: colors.muted,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 10,
-  },
-  scrollView: {
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  medicineCard: {
-    backgroundColor: colors.card,
-    padding: 16,
-    borderRadius: 14,
-    marginBottom: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-  },
-  medicineInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  medicineName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: colors.text,
-    marginLeft: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalOverlay2: {
-    flex: 1,
-    backgroundColor: colors.overlay2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalCardWrapper: {
-    width: width * 0.9,
-    borderRadius: 24,
-    padding: 2,
-  },
-  modalCardWrapper2: { width: width * 0.9, borderRadius: 24, padding: 2 },
-  modalContent: {
-    backgroundColor: colors.card,
+  backButton: {
+    width: 44,
+    height: 44,
     borderRadius: 22,
-    padding: 20,
-    maxHeight: height * 0.75,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  modalHeader: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.primary,
-    marginBottom: 14,
-    textAlign: "center",
-  },
-  modalScroll: {
-    marginBottom: 16,
-  },
-  modalItemBox: {
-    marginBottom: 10,
-  },
-  modalLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.muted,
-  },
-  modalValue: {
-    fontSize: 15,
-    color: colors.text,
-  },
-  closeButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    borderRadius: 12,
+  headerContent: {
+    flex: 1,
     alignItems: "center",
   },
-  closeButtonText: {
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
     color: "#fff",
-    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: {
     fontSize: 16,
+    color: "rgba(255,255,255,0.8)",
+    marginTop: 2,
+  },
+  headerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: "flex-start",
+    // alignItems: "center", // REMOVE to allow full width
+  },
+  webviewCard: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+    marginBottom: 24,
+    overflow: "hidden",
+  },
+  downloadButton: {
+    width: "100%",
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 10,
+    marginTop: 16,
+    shadowColor: "#f7971e",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: "#fffbe6",
+  },
+  buttonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
   },
   modalOverlaySpinner: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
 });

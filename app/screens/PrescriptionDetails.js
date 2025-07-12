@@ -1,45 +1,56 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
   Modal,
-  Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
 export default function PrescriptionDetailScreen({ route }) {
   const { prescription } = route.params;
-  const [selectedMedicine, setSelectedMedicine] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [prescriptionModalVisible, setPrescriptionModalVisible] =
-    useState(false);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
-  const openModal = (medicine) => {
-    setSelectedMedicine(medicine);
-    setModalVisible(true);
-  };
+  // Animation values
+  const fadeAnim = new Animated.Value(0);
+  const slideAnim = new Animated.Value(50);
+  const scaleAnim = new Animated.Value(0.9);
 
-  const closeModal = () => {
-    setSelectedMedicine(null);
-    setModalVisible(false);
-  };
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const renderMedicineInfo = (medicines) => {
     return medicines.map((med, index) => {
-      // Determine frequency
       let frequency = "";
-      const isArrayOfArrays = Array.isArray(med.taken[0]); // Check structure
+      const isArrayOfArrays = Array.isArray(med.taken[0]);
 
       if (isArrayOfArrays) {
         const timesPerDay = med.taken[0].length;
@@ -50,7 +61,6 @@ export default function PrescriptionDetailScreen({ route }) {
         } a day`;
       }
 
-      // Combine timeOfConsumption + consumption
       const whenToTake = med.timeOfConsumption
         .map((time) => `${time} ${med.consumption}`)
         .join(", ");
@@ -66,285 +76,435 @@ export default function PrescriptionDetailScreen({ route }) {
     });
   };
 
+  const getStatusColor = () => {
+    const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7"];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
   return (
     <View style={styles.container}>
-      <Text allowFontScaling={false} style={styles.header}>Prescription Overview</Text>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
+      {/* Animated Background Gradient */}
+      <LinearGradient
+        colors={["#667eea", "#764ba2"]}
+        style={styles.backgroundGradient}
+      />
+
+      {/* Header Section */}
+      <Animated.View
+        style={[
+          styles.headerSection,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Prescription</Text>
+          <Text style={styles.headerSubtitle}>Medical Details</Text>
+        </View>
+
+        <View style={styles.headerIcon}>
+          <Ionicons name="medical" size={28} color="#fff" />
+        </View>
+      </Animated.View>
+
       <Modal transparent visible={loading} animationType="fade">
         <View style={styles.modalOverlaySpinner}>
-          <ActivityIndicator size="large" color="#734BD1" />
+          <View style={styles.loadingCard}>
+            <ActivityIndicator size="large" color="#667eea" />
+            <Text style={styles.loadingText}>Loading...</Text>
+          </View>
         </View>
       </Modal>
-      <View style={styles.cardTop}>
-        <View>
-          <Text allowFontScaling={false} style={styles.diseaseText}>{prescription.disease}</Text>
-          <Text allowFontScaling={false} style={styles.metaText}>👨‍⚕️ Dr. {prescription.doctor}</Text>
-          <Text allowFontScaling={false} style={styles.metaText}>🏥 {prescription.hospital}</Text>
-        </View>
-        <View
-          style={{
-            backgroundColor: colors.primary,
-            borderRadius: 10,
-            height: 40,
-          }}
-        >
-          <Text
-            style={{
-              height: "100%",
-              width: "100%",
-              color: "white",
-              fontWeight: "bold",
-              padding: 10,
-            }}
-            onPress={() => {
-              navigation.navigate("PrescriptionView", { prescription: prescription })
-            }}
-          >
-            View Prescription
-          </Text>
-        </View>
-      </View>
 
-      <Text allowFontScaling={false} style={styles.sectionTitle}>Medicines</Text>
       <ScrollView
+        style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
       >
-        {renderMedicineInfo(prescription.medicines).map((med, idx) => (
-          <TouchableOpacity
-            key={idx}
-            style={styles.medicineCard}
-            onPress={() => openModal(med)}
-          >
-            <View style={styles.medicineInfo}>
-              <Ionicons
-                name="medkit-outline"
-                size={20}
-                color={colors.primary}
-              />
-              <Text allowFontScaling={false} style={styles.medicineName}>{med.medicineName}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalOverlay}>
+        {/* Prescription Overview Card */}
+        <Animated.View
+          style={[
+            styles.overviewCard,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
           <LinearGradient
-            colors={[colors.primary, colors.accent]}
-            style={styles.modalCardWrapper}
+            colors={["rgba(255,255,255,0.9)", "rgba(255,255,255,0.7)"]}
+            style={styles.glassCard}
           >
-            <View style={styles.modalContent}>
-              <Text allowFontScaling={false} style={styles.modalHeader}>
-                {selectedMedicine?.medicineName}
-              </Text>
-
-              <ScrollView
-                style={styles.modalScroll}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.modalItemBox}>
-                  <Text allowFontScaling={false} style={styles.modalLabel}>💊 Dosage:</Text>
-                  <Text allowFontScaling={false} style={styles.modalValue}>
-                    {selectedMedicine?.dosage}
+            <View style={styles.overviewHeader}>
+              <View style={styles.diseaseContainer}>
+                <View
+                  style={[
+                    styles.statusIndicator,
+                    { backgroundColor: getStatusColor() },
+                  ]}
+                />
+                <Text style={styles.diseaseText}>{prescription.disease}</Text>
+              </View>
+              <View style={styles.doctorInfo}>
+                <View style={styles.avatarContainer}>
+                  <Ionicons name="person-circle" size={40} color="#667eea" />
+                </View>
+                <View style={styles.doctorDetails}>
+                  <Text style={styles.doctorName}>
+                    Dr. {prescription.doctor}
+                  </Text>
+                  <Text style={styles.hospitalName}>
+                    {prescription.hospital}
                   </Text>
                 </View>
-                <View style={styles.modalItemBox}>
-                  <Text allowFontScaling={false} style={styles.modalLabel}>📆 Frequency:</Text>
-                  <Text allowFontScaling={false} style={styles.modalValue}>
-                    {selectedMedicine?.frequency}
-                  </Text>
-                </View>
-                <View style={styles.modalItemBox}>
-                  <Text allowFontScaling={false} style={styles.modalLabel}>⏳ Duration:</Text>
-                  <Text allowFontScaling={false} style={styles.modalValue}>
-                    {selectedMedicine?.duration} days
-                  </Text>
-                </View>
-                <View style={styles.modalItemBox}>
-                  <Text allowFontScaling={false} style={styles.modalLabel}>🕒 Schedule:</Text>
-                  <Text allowFontScaling={false} style={styles.modalValue}>
-                    {selectedMedicine?.whenToTake}
-                  </Text>
-                </View>
-                <View style={styles.modalItemBox}>
-                  <Text allowFontScaling={false} style={styles.modalLabel}>💡 How to Take:</Text>
-                  <Text allowFontScaling={false} style={styles.modalValue}>
-                    {selectedMedicine?.instructions}
-                  </Text>
-                </View>
-                {/* <View style={styles.modalItemBox}>
-                  <Text allowFontScaling={false} style={styles.modalLabel}>📋 Usage:</Text>
-                  <Text allowFontScaling={false} style={styles.modalValue}>
-                    {selectedMedicine?.usage}
-                  </Text>
-                </View> */}
-                {/* <View style={styles.modalItemBox}>
-                  <Text allowFontScaling={false} style={styles.modalLabel}>⚠️ Side Effects:</Text>
-                  <Text allowFontScaling={false} style={styles.modalValue}>
-                    {selectedMedicine?.sideEffects}
-                  </Text>
-                </View> */}
-                <View style={styles.modalItemBox}>
-                  <Text allowFontScaling={false} style={styles.modalLabel}>🛑 Precautions:</Text>
-                  <Text allowFontScaling={false} style={styles.modalValue}>Avoid alcohol</Text>
-                </View>
-              </ScrollView>
-
-              <Pressable style={styles.closeButton} onPress={closeModal}>
-                <Text allowFontScaling={false} style={styles.closeButtonText}>Close</Text>
-              </Pressable>
+              </View>
             </View>
+
+            <TouchableOpacity
+              style={styles.viewPrescriptionButton}
+              onPress={() =>
+                navigation.navigate("PrescriptionView", {
+                  prescription: prescription,
+                })
+              }
+            >
+              <LinearGradient
+                colors={["#667eea", "#764ba2"]}
+                style={styles.buttonGradient}
+              >
+                <Ionicons name="document-text" size={20} color="#fff" />
+                <Text style={styles.buttonText}>View Full Prescription</Text>
+                <Ionicons name="arrow-forward" size={18} color="#fff" />
+              </LinearGradient>
+            </TouchableOpacity>
           </LinearGradient>
-        </View>
-      </Modal>
+        </Animated.View>
+
+        {/* Medicines Section */}
+        <Animated.View
+          style={[
+            styles.medicinesSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          <View style={styles.sectionHeader}>
+            <Ionicons name="medkit" size={24} color="#667eea" />
+            <Text style={styles.sectionTitle}>Medications</Text>
+            <Text style={styles.medicineCount}>
+              {prescription.medicines.length} medicine
+              {prescription.medicines.length > 1 ? "s" : ""}
+            </Text>
+          </View>
+
+          {renderMedicineInfo(prescription.medicines).map((med, idx) => (
+            <Animated.View
+              key={idx}
+              style={[
+                styles.medicineCard,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <View style={styles.medicineTouchable}>
+                <LinearGradient
+                  colors={["rgba(255,255,255,0.9)", "rgba(255,255,255,0.7)"]}
+                  style={styles.medicineGlassCard}
+                >
+                  <View style={styles.medicineHeader}>
+                    <View style={styles.medicineIconContainer}>
+                      <Ionicons
+                        name="medical-outline"
+                        size={24}
+                        color="#667eea"
+                      />
+                    </View>
+                    <View style={styles.medicineInfo}>
+                      <Text style={styles.medicineName}>
+                        {med.medicineName}
+                      </Text>
+                      <Text style={styles.medicineDosage}>{med.dosage}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.medicineDetails}>
+                    <View style={styles.detailItem}>
+                      <Ionicons name="time-outline" size={16} color="#8e9aaf" />
+                      <Text style={styles.detailText}>{med.frequency}</Text>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={16}
+                        color="#8e9aaf"
+                      />
+                      <Text style={styles.detailText}>{med.duration} days</Text>
+                    </View>
+                  </View>
+                </LinearGradient>
+              </View>
+            </Animated.View>
+          ))}
+        </Animated.View>
+      </ScrollView>
     </View>
   );
 }
 
-const colors = {
-  background: "#F5F7FA",
-  card: "#FFFFFF",
-  primary: "#6C5CE7",
-  accent: "#A29BFE",
-  text: "#2D3436",
-  muted: "#636e72",
-  overlay: "rgba(0,0,0,0.4)",
-  overlay2: "white",
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    padding: 20,
   },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.primary,
-    marginBottom: 20,
+  backgroundGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  cardTop: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-    justifyContent: "space-between",
+  headerSection: {
     flexDirection: "row",
-  },
-  diseaseText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 10,
-  },
-  metaText: {
-    fontSize: 14,
-    color: colors.muted,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 10,
-  },
-  scrollView: {
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 60,
+    paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  medicineCard: {
-    backgroundColor: colors.card,
-    padding: 16,
-    borderRadius: 14,
-    marginBottom: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-  },
-  medicineInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  medicineName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: colors.text,
-    marginLeft: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalOverlay2: {
-    flex: 1,
-    backgroundColor: colors.overlay2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalCardWrapper: {
-    width: width * 0.9,
-    borderRadius: 24,
-    padding: 2,
-  },
-  modalCardWrapper2: { width: width * 0.9, borderRadius: 24, padding: 2 },
-  modalContent: {
-    backgroundColor: colors.card,
+  backButton: {
+    width: 44,
+    height: 44,
     borderRadius: 22,
-    padding: 20,
-    maxHeight: height * 0.75,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    backdropFilter: "blur(10px)",
   },
-  modalHeader: {
-    fontSize: 22,
+  headerContent: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 28,
     fontWeight: "700",
-    color: colors.primary,
-    marginBottom: 14,
-    textAlign: "center",
+    color: "#fff",
+    letterSpacing: 0.5,
   },
-  modalScroll: {
+  headerSubtitle: {
+    fontSize: 16,
+    color: "rgba(255,255,255,0.8)",
+    marginTop: 2,
+  },
+  headerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  overviewCard: {
+    marginBottom: 30,
+  },
+  glassCard: {
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  overviewHeader: {
+    marginBottom: 20,
+  },
+  diseaseContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
-  modalItemBox: {
-    marginBottom: 10,
+  statusIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
   },
-  modalLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.muted,
+  diseaseText: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#2d3436",
+    flex: 1,
   },
-  modalValue: {
-    fontSize: 15,
-    marginLeft: 18,
-    color: colors.text,
-  },
-  closeButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    borderRadius: 12,
+  doctorInfo: {
+    flexDirection: "row",
     alignItems: "center",
   },
-  closeButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
+  avatarContainer: {
+    marginRight: 16,
   },
+  doctorDetails: {
+    flex: 1,
+  },
+  doctorName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2d3436",
+    marginBottom: 4,
+  },
+  hospitalName: {
+    fontSize: 14,
+    color: "#636e72",
+  },
+  viewPrescriptionButton: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  buttonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginHorizontal: 8,
+  },
+  medicinesSection: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#fff",
+    marginLeft: 12,
+    flex: 1,
+  },
+  medicineCount: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  medicineCard: {
+    marginBottom: 16,
+  },
+  medicineTouchable: {
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  medicineGlassCard: {
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  medicineHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  medicineIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(102, 126, 234, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 16,
+  },
+  medicineInfo: {
+    flex: 1,
+  },
+  medicineName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2d3436",
+    marginBottom: 4,
+  },
+  medicineDosage: {
+    fontSize: 14,
+    color: "#636e72",
+  },
+  medicineArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(102, 126, 234, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  medicineDetails: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  detailItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  detailText: {
+    fontSize: 13,
+    color: "#8e9aaf",
+    marginLeft: 6,
+  },
+
   modalOverlaySpinner: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  loadingCard: {
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: 20,
+    padding: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#667eea",
+    fontWeight: "600",
   },
 });
