@@ -2,14 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import {
-    Image,
-    Platform,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useDispatch } from "react-redux";
 import { saveUserToStorage } from "../authStore";
@@ -59,7 +59,7 @@ const LoginScreen = ({ onLogin }) => {
       return;
     }
     if (
-      email.toLowerCase() === "bhumika@gmail.com" &&
+      email.toLowerCase() === "susan@gmail.com" &&
       password === "123456"
     ) {
       const user = { email };

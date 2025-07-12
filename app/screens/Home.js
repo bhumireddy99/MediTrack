@@ -64,13 +64,6 @@ const HomeScreen = () => {
 
   const date = useRef(new Date());
 
-  // const handleMarkAsTaken = (id) => {
-  //   const updated = medicines.map((med) =>
-  //     med.id === id ? { ...med, status: "Taken" } : med
-  //   );
-  //   setMedicines(updated);
-  // };
-
   const markAsTaken = async (medKey, medIndex, dayIndex, timeIndex, id) => {
     const path = `/patientRecords/Susan/${id}/medicines/${medIndex}/taken/${dayIndex}/${timeIndex}`;
     await database().ref(path).set(1);
